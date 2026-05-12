@@ -1,0 +1,44 @@
+-----FD001-----
+关键参数:
+学习率: 0.002
+学习率调度器: cosine
+余弦退火最小学习率(eta_min): 1e-05
+序列长度: 30
+批大小(batch_size): 128
+最大训练轮数(max_epochs): 30
+空间GAT: 开启
+GAT邻居数(topk): 5
+GAT嵌入维度: 8
+GAT隐藏维度: 8
+GAT输出维度: 16
+------------------------------
+Epoch: 1, Loss: 24.5405, Rmse_valid: 17.5835, valid_score: 13806.2, , rmse_test: 20.8532, score_test: 1597.3, Learning rate:0.00200000
+Epoch: 2, Loss: 15.7126, Rmse_valid: 13.9519, valid_score: 7943.0, , rmse_test: 17.7174, score_test: 940.9, Learning rate:0.00199455
+Epoch: 3, Loss: 13.0014, Rmse_valid: 12.9542, valid_score: 6122.0, , rmse_test: 14.5517, score_test: 426.7, Learning rate:0.00197826
+Epoch: 4, Loss: 11.9947, Rmse_valid: 12.6213, valid_score: 4166.8, , rmse_test: 13.3469, score_test: 260.1, Learning rate:0.00195130
+Epoch: 5, Loss: 11.4205, Rmse_valid: 12.5975, valid_score: 5775.4, , rmse_test: 13.5239, score_test: 308.2, Learning rate:0.00191398
+Epoch: 6, Loss: 10.8196, Rmse_valid: 16.0297, valid_score: 14442.6, , rmse_test: 17.3100, score_test: 697.7, Learning rate:0.00186670
+Epoch: 7, Loss: 10.7420, Rmse_valid: 12.9658, valid_score: 7224.4, , rmse_test: 14.7469, score_test: 424.9, Learning rate:0.00180997
+Epoch: 8, Loss: 10.2845, Rmse_valid: 10.9949, valid_score: 3584.7, , rmse_test: 13.7161, score_test: 301.7, Learning rate:0.00174443
+Epoch: 9, Loss: 10.0521, Rmse_valid: 11.5684, valid_score: 4007.2, , rmse_test: 13.6084, score_test: 282.3, Learning rate:0.00167078
+Epoch: 10, Loss: 9.8068, Rmse_valid: 13.1363, valid_score: 4560.6, , rmse_test: 14.3465, score_test: 315.3, Learning rate:0.00158985
+Epoch: 11, Loss: 9.5249, Rmse_valid: 12.4520, valid_score: 7287.6, , rmse_test: 14.7845, score_test: 387.2, Learning rate:0.00150250
+Epoch: 12, Loss: 9.2726, Rmse_valid: 12.5226, valid_score: 6748.3, , rmse_test: 14.9022, score_test: 428.9, Learning rate:0.00140970
+Epoch: 13, Loss: 9.1211, Rmse_valid: 14.1770, valid_score: 9422.8, , rmse_test: 15.6185, score_test: 489.7, Learning rate:0.00131247
+Epoch: 14, Loss: 8.9411, Rmse_valid: 12.0677, valid_score: 4356.5, , rmse_test: 14.6863, score_test: 319.6, Learning rate:0.00121187
+Epoch: 15, Loss: 8.6911, Rmse_valid: 13.6240, valid_score: 6983.4, , rmse_test: 14.5924, score_test: 371.3, Learning rate:0.00110901
+Epoch: 16, Loss: 8.4786, Rmse_valid: 13.0469, valid_score: 6134.2, , rmse_test: 14.5834, score_test: 355.3, Learning rate:0.00100500
+Epoch: 17, Loss: 8.2626, Rmse_valid: 11.6111, valid_score: 5349.3, , rmse_test: 15.0153, score_test: 381.5, Learning rate:0.00090099
+Epoch: 18, Loss: 8.1300, Rmse_valid: 12.3195, valid_score: 6337.0, , rmse_test: 14.4721, score_test: 338.1, Learning rate:0.00079813
+Epoch: 19, Loss: 7.9651, Rmse_valid: 11.7028, valid_score: 4397.9, , rmse_test: 14.9410, score_test: 338.0, Learning rate:0.00069753
+Epoch: 20, Loss: 7.8656, Rmse_valid: 12.8478, valid_score: 6209.9, , rmse_test: 14.4770, score_test: 338.1, Learning rate:0.00060030
+Epoch: 21, Loss: 7.6739, Rmse_valid: 12.2947, valid_score: 6098.0, , rmse_test: 14.5321, score_test: 334.9, Learning rate:0.00050750
+Epoch: 22, Loss: 7.5898, Rmse_valid: 12.6820, valid_score: 5755.4, , rmse_test: 14.7025, score_test: 332.0, Learning rate:0.00042015
+Epoch: 23, Loss: 7.5052, Rmse_valid: 12.5451, valid_score: 7391.3, , rmse_test: 15.2037, score_test: 417.2, Learning rate:0.00033922
+Epoch: 24, Loss: 7.4203, Rmse_valid: 12.7518, valid_score: 6434.8, , rmse_test: 14.4977, score_test: 333.9, Learning rate:0.00026557
+Epoch: 25, Loss: 7.3535, Rmse_valid: 12.2143, valid_score: 5582.5, , rmse_test: 14.7116, score_test: 349.8, Learning rate:0.00020003
+Epoch: 26, Loss: 7.2898, Rmse_valid: 12.8844, valid_score: 6444.3, , rmse_test: 14.7788, score_test: 363.5, Learning rate:0.00014330
+Epoch: 27, Loss: 7.2468, Rmse_valid: 12.4841, valid_score: 6451.1, , rmse_test: 14.8546, score_test: 376.9, Learning rate:0.00009602
+Epoch: 28, Loss: 7.2232, Rmse_valid: 12.6309, valid_score: 6360.5, , rmse_test: 14.7298, score_test: 355.4, Learning rate:0.00005870
+Epoch: 29, Loss: 7.1952, Rmse_valid: 12.2043, valid_score: 6312.5, , rmse_test: 14.7495, score_test: 363.3, Learning rate:0.00003174
+Epoch: 30, Loss: 7.1775, Rmse_valid: 12.7107, valid_score: 6207.5, , rmse_test: 14.7577, score_test: 362.3, Learning rate:0.00001545

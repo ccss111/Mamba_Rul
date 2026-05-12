@@ -1,0 +1,71 @@
+-----FD001-----
+关键参数:
+序列长度: 30
+批大小(batch_size): 128
+最大训练轮数(max_epochs): 30
+随机数种子: 51
+模型代号(model_code): A_g_dropout0.1_1
+模型结构(model_structure): encoderdecoder
+消融预设(ablation_preset): A - KNN graph + GAT-LSTM with encoder and decoder (AOF off)
+学习率: 0.002
+学习率调度器: step
+Step步长(step_size): 10
+Step衰减系数(gamma): 0.1
+空间GAT: 开启
+是否使用解码器LSTM: 是
+是否使用AOF: 否
+Decoder注意力隐层维度: 28
+图构建模式(graph_mode): dynamic_knn
+GAT层数(num_layers): 2
+GAT邻居数(topk): 7
+GAT嵌入维度: 8
+GAT隐藏层维度: 8
+------------------------------
+Epoch: 1, Loss: 23.2991, Rmse_valid: 16.3724, valid_score: 7907.1, , rmse_test: 20.2333, score_test: 2545.9, Learning rate:0.00200000
+Epoch: 2, Loss: 18.4481, Rmse_valid: 16.5965, valid_score: 8647.0, , rmse_test: 18.9203, score_test: 1566.8, Learning rate:0.00200000
+Epoch: 3, Loss: 16.8744, Rmse_valid: 15.7886, valid_score: 7606.9, , rmse_test: 15.8436, score_test: 584.1, Learning rate:0.00200000
+Epoch: 4, Loss: 14.9415, Rmse_valid: 12.9359, valid_score: 4553.1, , rmse_test: 14.3526, score_test: 351.8, Learning rate:0.00200000
+Epoch: 5, Loss: 13.7247, Rmse_valid: 16.7089, valid_score: 14050.3, , rmse_test: 19.6554, score_test: 1072.9, Learning rate:0.00200000
+Epoch: 6, Loss: 13.2341, Rmse_valid: 12.1688, valid_score: 3692.9, , rmse_test: 14.0281, score_test: 264.1, Learning rate:0.00200000
+Epoch: 7, Loss: 12.6891, Rmse_valid: 15.5722, valid_score: 11842.9, , rmse_test: 18.2197, score_test: 801.0, Learning rate:0.00200000
+Epoch: 8, Loss: 12.1663, Rmse_valid: 13.3989, valid_score: 4621.3, , rmse_test: 14.6880, score_test: 354.7, Learning rate:0.00200000
+Epoch: 9, Loss: 12.0688, Rmse_valid: 11.9517, valid_score: 3677.5, , rmse_test: 13.4524, score_test: 240.1, Learning rate:0.00200000
+Epoch: 10, Loss: 11.6268, Rmse_valid: 10.7610, valid_score: 3696.7, , rmse_test: 13.2528, score_test: 285.1, Learning rate:0.00200000
+Epoch: 11, Loss: 10.4632, Rmse_valid: 11.0573, valid_score: 4207.3, , rmse_test: 13.3610, score_test: 303.1, Learning rate:0.00020000
+Epoch: 12, Loss: 10.3495, Rmse_valid: 11.6923, valid_score: 4681.5, , rmse_test: 13.5387, score_test: 323.5, Learning rate:0.00020000
+Epoch: 13, Loss: 10.2981, Rmse_valid: 11.1462, valid_score: 4222.0, , rmse_test: 13.2452, score_test: 287.7, Learning rate:0.00020000
+Epoch: 14, Loss: 10.2617, Rmse_valid: 11.4505, valid_score: 4352.2, , rmse_test: 13.2303, score_test: 291.0, Learning rate:0.00020000
+Epoch: 15, Loss: 10.2310, Rmse_valid: 11.6315, valid_score: 4909.3, , rmse_test: 13.6683, score_test: 344.9, Learning rate:0.00020000
+Epoch: 16, Loss: 10.1767, Rmse_valid: 11.1937, valid_score: 4375.2, , rmse_test: 13.3752, score_test: 300.6, Learning rate:0.00020000
+Epoch: 17, Loss: 10.1174, Rmse_valid: 11.6772, valid_score: 4778.9, , rmse_test: 13.4510, score_test: 314.1, Learning rate:0.00020000
+Epoch: 18, Loss: 10.0954, Rmse_valid: 11.7060, valid_score: 4439.7, , rmse_test: 13.3343, score_test: 287.2, Learning rate:0.00020000
+Epoch: 19, Loss: 10.0540, Rmse_valid: 11.9523, valid_score: 5030.7, , rmse_test: 13.4641, score_test: 314.4, Learning rate:0.00020000
+Epoch: 20, Loss: 10.0268, Rmse_valid: 11.5468, valid_score: 4539.4, , rmse_test: 13.2966, score_test: 286.6, Learning rate:0.00020000
+Epoch: 21, Loss: 9.9341, Rmse_valid: 11.5124, valid_score: 4786.3, , rmse_test: 13.4041, score_test: 297.5, Learning rate:0.00002000
+Epoch: 22, Loss: 9.9114, Rmse_valid: 11.8045, valid_score: 4808.2, , rmse_test: 13.4026, score_test: 297.3, Learning rate:0.00002000
+Epoch: 23, Loss: 9.9149, Rmse_valid: 11.8736, valid_score: 5009.8, , rmse_test: 13.4960, score_test: 308.2, Learning rate:0.00002000
+Epoch: 24, Loss: 9.9336, Rmse_valid: 11.9648, valid_score: 4876.0, , rmse_test: 13.4334, score_test: 302.4, Learning rate:0.00002000
+Epoch: 25, Loss: 9.9177, Rmse_valid: 11.5540, valid_score: 4942.8, , rmse_test: 13.4396, score_test: 302.0, Learning rate:0.00002000
+Epoch: 26, Loss: 9.8996, Rmse_valid: 11.9452, valid_score: 4769.9, , rmse_test: 13.4132, score_test: 296.0, Learning rate:0.00002000
+Epoch: 27, Loss: 9.9060, Rmse_valid: 11.7238, valid_score: 4955.1, , rmse_test: 13.4813, score_test: 305.7, Learning rate:0.00002000
+Epoch: 28, Loss: 9.9012, Rmse_valid: 11.8106, valid_score: 5216.5, , rmse_test: 13.5532, score_test: 318.1, Learning rate:0.00002000
+Epoch: 29, Loss: 9.9040, Rmse_valid: 11.7886, valid_score: 4692.6, , rmse_test: 13.4111, score_test: 292.1, Learning rate:0.00002000
+Epoch: 30, Loss: 9.9099, Rmse_valid: 11.8111, valid_score: 4957.1, , rmse_test: 13.4440, score_test: 302.0, Learning rate:0.00002000
+[Train Summary] Restored best model from epoch 10, rmse_valid: 10.7610, valid_score: 3696.7, rmse_test: 13.2528, score_test: 285.1
+[Train Time] start: 2026-04-25 10:36:38, end: 2026-04-25 10:38:04, duration: 0:01:26, total_seconds: 86.01
+[Auto Test] command: /usr/bin/python /CMAPSS-release/scipt/test_model.py --sub-dataset FD001 --smooth-rate 30 --sequence-len 30 --feature-num 14 --dataset-root /CMAPSS-release/CMAPSSData/ --max-rul 125 --batch-size 128 --model-path /CMAPSS-release/logs/FD001_A_g_dropout0.1_1/seed51/model_FD001_0425_103638_seed51.pkl
+[Auto Test][ERROR] return_code=1
+Traceback (most recent call last):
+  File "/CMAPSS-release/scipt/test_model.py", line 186, in <module>
+    rmse_final, score = evaluate(
+  File "/CMAPSS-release/utils/functions.py", line 231, in evaluate
+    rul_pred, _ = model.forward(x_test)
+  File "/CMAPSS-release/model/LSTM_Attention.py", line 160, in forward
+    output, attention_weights = self.decoder(decoder_x, encoder_output, encoder_state)
+  File "/usr/local/lib/python3.8/dist-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/CMAPSS-release/model/LSTM_Attention.py", line 46, in forward
+    if self.use_aef:
+  File "/usr/local/lib/python3.8/dist-packages/torch/nn/modules/module.py", line 1177, in __getattr__
+    raise AttributeError("'{}' object has no attribute '{}'".format(
+AttributeError: 'Seq2SeqDecoder' object has no attribute 'use_aef'

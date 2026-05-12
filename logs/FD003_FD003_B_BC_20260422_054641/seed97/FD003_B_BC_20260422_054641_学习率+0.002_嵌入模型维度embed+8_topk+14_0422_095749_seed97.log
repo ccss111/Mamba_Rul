@@ -1,0 +1,58 @@
+-----FD003-----
+关键参数:
+序列长度: 30
+批大小(batch_size): 128
+最大训练轮数(max_epochs): 30
+随机数种子: 97
+模型代号(model_code): FD003_B_BC_20260422_054641
+模型结构(model_structure): encoderdecoder
+消融预设(ablation_preset): B - Full-connected graph + GAT-LSTM with encoder and decoder (AOF off)
+学习率: 0.002
+学习率调度器: step
+Step步长(step_size): 10
+Step衰减系数(gamma): 0.1
+空间GAT: 开启
+是否使用解码器LSTM: 是
+是否使用AOF: 否
+Decoder注意力隐层维度: 28
+图构建模式(graph_mode): dynamic_knn
+GAT层数(num_layers): 2
+GAT邻居数(topk): 14
+GAT嵌入维度: 8
+GAT隐藏层维度: 8
+------------------------------
+Epoch: 1, Loss: 28.3559, Rmse_valid: 20.1706, valid_score: 33971.5, , rmse_test: 25.5161, score_test: 5540.5, Learning rate:0.00200000
+Epoch: 2, Loss: 19.7893, Rmse_valid: 18.0531, valid_score: 20126.1, , rmse_test: 23.5901, score_test: 3068.1, Learning rate:0.00200000
+Epoch: 3, Loss: 18.3135, Rmse_valid: 15.5481, valid_score: 10309.1, , rmse_test: 19.2650, score_test: 1177.3, Learning rate:0.00200000
+Epoch: 4, Loss: 14.7143, Rmse_valid: 14.3805, valid_score: 13109.7, , rmse_test: 18.1150, score_test: 2019.4, Learning rate:0.00200000
+Epoch: 5, Loss: 12.8887, Rmse_valid: 12.2998, valid_score: 11296.8, , rmse_test: 17.4590, score_test: 1816.7, Learning rate:0.00200000
+Epoch: 6, Loss: 12.0507, Rmse_valid: 13.2374, valid_score: 9357.7, , rmse_test: 16.1194, score_test: 1297.5, Learning rate:0.00200000
+Epoch: 7, Loss: 11.7028, Rmse_valid: 11.2384, valid_score: 9952.3, , rmse_test: 16.7554, score_test: 1927.0, Learning rate:0.00200000
+Epoch: 8, Loss: 11.3932, Rmse_valid: 12.3043, valid_score: 8278.1, , rmse_test: 16.4514, score_test: 1356.9, Learning rate:0.00200000
+Epoch: 9, Loss: 11.0805, Rmse_valid: 11.2161, valid_score: 10097.0, , rmse_test: 16.7705, score_test: 2118.6, Learning rate:0.00200000
+Epoch: 10, Loss: 10.9133, Rmse_valid: 10.3272, valid_score: 6565.7, , rmse_test: 15.8272, score_test: 1352.8, Learning rate:0.00200000
+Epoch: 11, Loss: 9.4310, Rmse_valid: 10.0450, valid_score: 7370.5, , rmse_test: 15.9302, score_test: 1388.3, Learning rate:0.00020000
+Epoch: 12, Loss: 9.3277, Rmse_valid: 9.7481, valid_score: 7802.0, , rmse_test: 16.0933, score_test: 1531.8, Learning rate:0.00020000
+Epoch: 13, Loss: 9.2472, Rmse_valid: 9.7573, valid_score: 7840.1, , rmse_test: 16.2471, score_test: 1454.8, Learning rate:0.00020000
+Epoch: 14, Loss: 9.1693, Rmse_valid: 9.8429, valid_score: 7408.6, , rmse_test: 15.9514, score_test: 1395.1, Learning rate:0.00020000
+Epoch: 15, Loss: 9.1064, Rmse_valid: 9.9525, valid_score: 7731.7, , rmse_test: 16.0193, score_test: 1432.2, Learning rate:0.00020000
+Epoch: 16, Loss: 9.0449, Rmse_valid: 9.5131, valid_score: 7568.6, , rmse_test: 16.0317, score_test: 1410.9, Learning rate:0.00020000
+Epoch: 17, Loss: 8.9844, Rmse_valid: 10.0595, valid_score: 7194.1, , rmse_test: 15.7535, score_test: 1283.9, Learning rate:0.00020000
+Epoch: 18, Loss: 8.9358, Rmse_valid: 9.5608, valid_score: 7113.4, , rmse_test: 16.0060, score_test: 1430.2, Learning rate:0.00020000
+Epoch: 19, Loss: 8.8822, Rmse_valid: 9.2460, valid_score: 7122.0, , rmse_test: 16.0727, score_test: 1399.3, Learning rate:0.00020000
+Epoch: 20, Loss: 8.8396, Rmse_valid: 9.4745, valid_score: 7158.1, , rmse_test: 15.8246, score_test: 1284.1, Learning rate:0.00020000
+Epoch: 21, Loss: 8.7292, Rmse_valid: 9.5795, valid_score: 7170.8, , rmse_test: 15.8878, score_test: 1341.4, Learning rate:0.00002000
+Epoch: 22, Loss: 8.7193, Rmse_valid: 9.4927, valid_score: 7002.4, , rmse_test: 15.8817, score_test: 1342.4, Learning rate:0.00002000
+Epoch: 23, Loss: 8.7122, Rmse_valid: 9.4891, valid_score: 7061.2, , rmse_test: 15.9110, score_test: 1352.5, Learning rate:0.00002000
+Epoch: 24, Loss: 8.7059, Rmse_valid: 9.5227, valid_score: 6959.6, , rmse_test: 15.8641, score_test: 1329.9, Learning rate:0.00002000
+Epoch: 25, Loss: 8.6998, Rmse_valid: 9.4775, valid_score: 6897.5, , rmse_test: 15.8968, score_test: 1335.2, Learning rate:0.00002000
+Epoch: 26, Loss: 8.6946, Rmse_valid: 9.3644, valid_score: 6994.6, , rmse_test: 15.9057, score_test: 1352.7, Learning rate:0.00002000
+Epoch: 27, Loss: 8.6895, Rmse_valid: 9.4188, valid_score: 6910.0, , rmse_test: 15.8864, score_test: 1340.6, Learning rate:0.00002000
+Epoch: 28, Loss: 8.6835, Rmse_valid: 9.4177, valid_score: 6845.6, , rmse_test: 15.8525, score_test: 1326.0, Learning rate:0.00002000
+Epoch: 29, Loss: 8.6786, Rmse_valid: 9.4492, valid_score: 6821.1, , rmse_test: 15.8531, score_test: 1326.2, Learning rate:0.00002000
+Epoch: 30, Loss: 8.6747, Rmse_valid: 9.3431, valid_score: 6980.6, , rmse_test: 15.9172, score_test: 1343.2, Learning rate:0.00002000
+[Train Summary] Restored best model from epoch 19, rmse_valid: 9.2460, valid_score: 7122.0, rmse_test: 16.0727, score_test: 1399.3
+[Train Time] start: 2026-04-22 09:57:49, end: 2026-04-22 09:59:17, duration: 0:01:29, total_seconds: 88.63
+[Auto Test] command: /usr/bin/python /CMAPSS-release/scipt/test_model.py --sub-dataset FD003 --smooth-rate 40 --sequence-len 30 --feature-num 14 --dataset-root /CMAPSS-release/CMAPSSData/ --max-rul 125 --batch-size 128 --model-path /CMAPSS-release/logs/FD003_FD003_B_BC_20260422_054641/seed97/model_FD003_0422_095749_seed97.pkl
+model_path:/CMAPSS-release/logs/FD003_FD003_B_BC_20260422_054641/seed97/model_FD003_0422_095749_seed97.pkl
+rmse_final:15.869152069091797, score:1335.8336181640625
