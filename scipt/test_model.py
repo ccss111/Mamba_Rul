@@ -119,7 +119,7 @@ def _save_predictions_svg(svg_path, sub_dataset, true_rul, pred_rul):
 if __name__ == '__main__':
     current_dir = os.getcwd()  # Get the current directory
     parent_dir = os.path.dirname(current_dir)  # Get the upper-level directory
-    parent_dir = "/CMAPSS-release"
+    parent_dir = PROJECT_ROOT
     parser = argparse.ArgumentParser(description='Cmapss Dataset With Pytorch')
     # To evaluate the trained models on different sub-datasets,
     # please change the following two options
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('--sequence-len', type=int, default=30)
     parser.add_argument('--feature-num', type=int, default=14)
     parser.add_argument('--dataset-root', type=str,
-                        default=parent_dir + '/CMAPSSData/',
+                        default=os.path.join(parent_dir, 'CMAPSSData') + '/', 
                         help='The dir of CMAPSS dataset1')
     parser.add_argument('--max-rul', type=int, default=125, help='piece-wise RUL')
     parser.add_argument('--batch-size', type=int, default=128)
@@ -159,18 +159,6 @@ if __name__ == '__main__':
     model_path = _resolve_model_path(args.model_path, trials_dir, args.sub_dataset)
 
     model = torch.load(model_path, map_location=device)
-    # Backward compatibility for legacy checkpoints saved before GAT switch was introduced.
-    if not hasattr(model, 'use_spatial_gat'):
-        model.use_spatial_gat = hasattr(model, 'spatial_gat') and model.spatial_gat is not None
-    if not hasattr(model, 'spatial_gat'):
-        model.spatial_gat = None
-    if hasattr(model, 'spatial_gat') and model.spatial_gat is not None:
-        if not hasattr(model.spatial_gat, 'graph_mode'):
-            model.spatial_gat.graph_mode = 'dynamic_knn'
-        if not hasattr(model.spatial_gat, '_static_adjacency'):
-            model.spatial_gat._static_adjacency = None
-        if not hasattr(model.spatial_gat, '_static_cosine_similarity'):
-            model.spatial_gat._static_cosine_similarity = None
     model_type = type(model).__name__
     model.to(device)
     train_loader, valid_loader, test_loader, test_loader_last, \
