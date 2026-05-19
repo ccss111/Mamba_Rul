@@ -8,6 +8,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
@@ -41,15 +42,43 @@ def _resolve_model_path(model_path, trials_dir, sub_dataset):
     )
 
 
-def _collect_per_engine_predictions(model, test_loader_last, max_rul, device):
+def _collect_per_engine_predictions(model, test_loader_last, max_rul, device, eval_batch_size: int = 32, use_amp: bool = False):
     model.eval()
-    with torch.no_grad():
-        x_test, y_test = next(iter(test_loader_last))
-        x_test = x_test.to(device)
-        y_pred, _ = model.forward(x_test)
+    dataset = getattr(test_loader_last, "dataset", None)
+    if dataset is None or not hasattr(dataset, "x_data") or not hasattr(dataset, "y_data"):
+        # Fallback to legacy behavior
+        with torch.no_grad():
+            x_test, y_test = next(iter(test_loader_last))
+            x_test = x_test.to(device)
+            y_pred, _ = model.forward(x_test)
+        true_rul = (y_test.reshape(-1).cpu().numpy()) * max_rul
+        pred_rul = (y_pred.reshape(-1).detach().cpu().numpy()) * max_rul
+        return true_rul, pred_rul
 
-    true_rul = (y_test.reshape(-1).cpu().numpy()) * max_rul
-    pred_rul = (y_pred.reshape(-1).detach().cpu().numpy()) * max_rul
+    if eval_batch_size is None or int(eval_batch_size) <= 0:
+        eval_batch_size = 32
+    eval_batch_size = int(eval_batch_size)
+
+    x_all = dataset.x_data
+    y_all = dataset.y_data.reshape(-1)
+
+    preds = []
+    with torch.no_grad():
+        autocast_ctx = (torch.cuda.amp.autocast(dtype=torch.float16)
+                        if use_amp and getattr(device, "type", str(device)) == "cuda"
+                        else None)
+        for start in range(0, len(x_all), eval_batch_size):
+            x_batch = x_all[start:start + eval_batch_size].to(device)
+            if autocast_ctx is None:
+                y_pred, _ = model.forward(x_batch)
+            else:
+                with autocast_ctx:
+                    y_pred, _ = model.forward(x_batch)
+            preds.append(y_pred.detach().float().cpu())
+
+    y_pred_all = torch.cat(preds, dim=0).reshape(-1)
+    true_rul = (y_all.cpu().numpy()) * max_rul
+    pred_rul = (y_pred_all.cpu().numpy()) * max_rul
     return true_rul, pred_rul
 
 
@@ -123,7 +152,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Cmapss Dataset With Pytorch')
     # To evaluate the trained models on different sub-datasets,
     # please change the following two options
-    parser.add_argument('--sub-dataset', type=str, default='FD003', help='FD001/2/3/4')
+    parser.add_argument('--sub-dataset', type=str, default='FD002', help='FD001/2/3/4')
     parser.add_argument('--smooth-rate', type=int, default=30)
     # Below is the default settings
     parser.add_argument('--use-exponential-smoothing', default=True)
@@ -152,6 +181,10 @@ if __name__ == '__main__':
                         help='将每台发动机的真实/预测RUL绘制为SVG')
     parser.add_argument('--pred-svg-path', type=str, default='',
                         help='预测SVG输出路径，默认 figure/<sub_dataset>_<model_name>_pred.svg')
+    parser.add_argument('--eval-batch-size', type=int, default=32,
+                        help='评估/推理时的batch size（用于避免CUDA OOM）')
+    parser.add_argument('--amp', action='store_true', default=False,
+                        help='推理时启用AMP(fp16)以节省显存（可能造成轻微数值差异）')
     args = parser.parse_args()
 
     device = torch.device('cuda' if (not args.no_cuda and torch.cuda.is_available()) else 'cpu')
@@ -172,8 +205,14 @@ if __name__ == '__main__':
             smooth_rate=args.smooth_rate)
 
     rmse_final, score = evaluate(
-            model, num_test_windows, test_loader, args.max_rul,
-        device=device)
+            model,
+            num_test_windows,
+            test_loader,
+            args.max_rul,
+            device=device,
+            eval_batch_size=args.eval_batch_size,
+            use_amp=args.amp,
+        )
 
     print('model_path:{}'.format(model_path))
     print('rmse_final:{}, score:{}'.format(rmse_final, score))
@@ -184,6 +223,8 @@ if __name__ == '__main__':
             test_loader_last=test_loader_last,
             max_rul=args.max_rul,
             device=device,
+            eval_batch_size=args.eval_batch_size,
+            use_amp=args.amp,
         )
 
     if args.save_pred_csv:

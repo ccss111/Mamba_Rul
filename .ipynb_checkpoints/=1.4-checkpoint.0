@@ -1,0 +1,28 @@
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple
+Collecting causal-conv1d
+  Downloading https://mirrors.aliyun.com/pypi/packages/3f/28/c21f5059837c6426c0e15eaf7ada62febe00ccc3f23a4f6b3b9029bbdf8a/causal_conv1d-1.4.0.tar.gz (9.3 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: torch in /usr/local/miniconda3/lib/python3.8/site-packages (from causal-conv1d) (2.0.0+cu118)
+Requirement already satisfied: packaging in /usr/local/miniconda3/lib/python3.8/site-packages (from causal-conv1d) (23.0)
+Collecting ninja (from causal-conv1d)
+  Downloading https://mirrors.aliyun.com/pypi/packages/ed/de/0e6edf44d6a04dabd0318a519125ed0415ce437ad5a1ec9b9be03d9048cf/ninja-1.13.0-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (180 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 180.7/180.7 kB 169.7 kB/s eta 0:00:00
+Requirement already satisfied: filelock in /usr/local/miniconda3/lib/python3.8/site-packages (from torch->causal-conv1d) (3.9.0)
+Requirement already satisfied: typing-extensions in /usr/local/miniconda3/lib/python3.8/site-packages (from torch->causal-conv1d) (4.4.0)
+Requirement already satisfied: sympy in /usr/local/miniconda3/lib/python3.8/site-packages (from torch->causal-conv1d) (1.11.1)
+Requirement already satisfied: networkx in /usr/local/miniconda3/lib/python3.8/site-packages (from torch->causal-conv1d) (3.0)
+Requirement already satisfied: jinja2 in /usr/local/miniconda3/lib/python3.8/site-packages (from torch->causal-conv1d) (3.1.2)
+Requirement already satisfied: triton==2.0.0 in /usr/local/miniconda3/lib/python3.8/site-packages (from torch->causal-conv1d) (2.0.0)
+Requirement already satisfied: cmake in /usr/local/miniconda3/lib/python3.8/site-packages (from triton==2.0.0->torch->causal-conv1d) (3.25.0)
+Requirement already satisfied: lit in /usr/local/miniconda3/lib/python3.8/site-packages (from triton==2.0.0->torch->causal-conv1d) (15.0.7)
+Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/miniconda3/lib/python3.8/site-packages (from jinja2->torch->causal-conv1d) (2.1.2)
+Requirement already satisfied: mpmath>=0.19 in /usr/local/miniconda3/lib/python3.8/site-packages (from sympy->torch->causal-conv1d) (1.2.1)
+Building wheels for collected packages: causal-conv1d
+  Building wheel for causal-conv1d (setup.py): started
+  Building wheel for causal-conv1d (setup.py): finished with status 'done'
+  Created wheel for causal-conv1d: filename=causal_conv1d-1.4.0-cp38-cp38-linux_x86_64.whl size=103586564 sha256=5fedad76fabdbfbd41e65dd77c37b168bef1e500e5ecdaea3feedbe2b448b0e2
+  Stored in directory: /root/.cache/pip/wheels/96/d0/43/a0e7300d8c485a71fce74cafdcc42ec9a0271da3e8e8e1f8af
+Successfully built causal-conv1d
+Installing collected packages: ninja, causal-conv1d
+Successfully installed causal-conv1d-1.4.0 ninja-1.13.0

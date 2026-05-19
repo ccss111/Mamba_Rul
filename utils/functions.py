@@ -5,6 +5,7 @@ from sklearn.metrics import mean_squared_error
 import datetime
 import os
 import time as time_module
+from contextlib import nullcontext
 
 
 def my_accuracy(true_rul, pred_rul):
@@ -223,22 +224,54 @@ def train(model_for_train, train_loader, valid_loader, test_loader, N_EPOCH, opt
     print(train_time_msg)
 
 
-def evaluate(model, num_test_windows, test_loader, max_rul, device):
+def evaluate(model, num_test_windows, test_loader, max_rul, device, eval_batch_size: int = 32, use_amp: bool = False):
+    """Evaluate model on CMAPSS test set in a memory-safe way.
+
+    Notes:
+        The default `get_dataloader()` constructs `test_loader` with
+        `batch_size=len(test_labels)` which loads the entire test set as one
+        batch. For SGFormer-style spatial attention (flattening to B*T), this
+        can easily trigger CUDA OOM. Here we instead read from the underlying
+        dataset and run chunked inference.
+    """
+
+    if eval_batch_size is None or int(eval_batch_size) <= 0:
+        eval_batch_size = 32
+    eval_batch_size = int(eval_batch_size)
+
+    model.eval()
     model.to(device)
-    x_test, y_test = next(iter(test_loader))
-    x_test = x_test.to(device)
-    y_test = (y_test.reshape(-1)) * max_rul
-    rul_pred, _ = model.forward(x_test)
-    rul_pred = rul_pred.reshape(-1)  # (497,1) -- (497,)
-    rul_pred = rul_pred.detach()
-    rul_pred *= max_rul
+
+    dataset = getattr(test_loader, "dataset", None)
+    if dataset is None or not hasattr(dataset, "x_data") or not hasattr(dataset, "y_data"):
+        raise ValueError("test_loader must have a dataset with x_data/y_data")
+
+    x_all = dataset.x_data
+    y_all = dataset.y_data.reshape(-1) * max_rul
+
+    autocast_ctx = nullcontext()
+    if use_amp and getattr(device, "type", str(device)) == "cuda":
+        autocast_ctx = torch.cuda.amp.autocast(dtype=torch.float16)
+
+    preds = []
+    with torch.no_grad():
+        for start in range(0, len(x_all), eval_batch_size):
+            x_batch = x_all[start:start + eval_batch_size].to(device)
+            with autocast_ctx:
+                y_pred, _ = model.forward(x_batch)
+            preds.append(y_pred.detach().float().cpu())
+
+    rul_pred = torch.cat(preds, dim=0).reshape(-1) * max_rul
+
     preds_for_each_engine = torch.split(rul_pred, num_test_windows)
-    y_test = torch.split(y_test, num_test_windows)
-    y_test = torch.tensor([item.sum() / len(item) for item in y_test])
-    y_test, index = y_test.sort(descending=True)
+    y_split = torch.split(y_all, num_test_windows)
+
+    y_engine = torch.tensor([item.sum() / len(item) for item in y_split])
+    y_engine, index = y_engine.sort(descending=True)
     mean_pred_for_each_engine = torch.tensor([item.sum() / len(item) for item in preds_for_each_engine])
     mean_pred_for_each_engine = torch.index_select(mean_pred_for_each_engine, dim=0, index=index)
     mean_pred_for_each_engine = mean_pred_for_each_engine.floor()
-    RMSE = mean_squared_error(y_test, mean_pred_for_each_engine, squared=False).item()
-    score = compute_s_score(y_test, mean_pred_for_each_engine)
+
+    RMSE = mean_squared_error(y_engine.cpu().numpy(), mean_pred_for_each_engine.cpu().numpy(), squared=False).item()
+    score = compute_s_score(y_engine, mean_pred_for_each_engine)
     return RMSE, score

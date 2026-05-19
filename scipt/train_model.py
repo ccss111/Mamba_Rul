@@ -55,7 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset-root', type=str,
                         default=os.path.join(parent_dir, 'CMAPSSData') + '/', 
                         help='The dir of CMAPSS dataset1')
-    parser.add_argument('--sub-dataset', type=str, default='FD001', help='FD001/2/3/4')
+    parser.add_argument('--sub-dataset', type=str, default='FD002', help='FD001/2/3/4')
     parser.add_argument('--max-rul', type=int, default=125, help='piece-wise RUL')
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--lr', type=float, default=2e-3)

@@ -1,0 +1,29 @@
+-----FD001-----
+关键参数:
+序列长度: 30
+批大小(batch_size): 64
+最大训练轮数(max_epochs): 1
+随机数种子: 2
+模型代号(model_code): A
+模型结构(model_structure): sgformer_mamba_regressor
+学习率: 0.002
+学习率调度器: step
+Step步长(step_size): 10
+Step衰减系数(gamma): 0.1
+空间模块: SGFormer(传感器维度全注意力)
+d_model: 32
+spatial_num_layers: 1
+spatial_num_heads: 4
+spatial_dropout: 0.1
+时间模块: Mamba-style selective SSM (no encoder-decoder)
+temporal_num_layers: 1
+temporal_d_state: 8
+temporal_dropout: 0.1
+sensor_pooling: mean
+------------------------------
+Epoch: 1, Loss: 21.6240, Rmse_valid: 18.2906, valid_score: 15605.3, , rmse_test: 19.3838, score_test: 1508.1, Learning rate:0.00200000
+[Train Summary] Restored best model from epoch 1, rmse_valid: 18.2906, valid_score: 15605.3, rmse_test: 19.3838, score_test: 1508.1
+[Train Time] start: 2026-05-19 06:08:34, end: 2026-05-19 06:08:41, duration: 0:00:07, total_seconds: 6.72
+[Auto Test] command: /usr/local/miniconda3/bin/python /SGFormer_mamba/scipt/test_model.py --sub-dataset FD001 --smooth-rate 40 --sequence-len 30 --feature-num 14 --dataset-root /SGFormer_mamba/CMAPSSData/ --max-rul 125 --batch-size 64 --model-path /SGFormer_mamba/logs/FD001_A/seed2/model_FD001_0519_060834_seed2.pkl
+model_path:/SGFormer_mamba/logs/FD001_A/seed2/model_FD001_0519_060834_seed2.pkl
+rmse_final:19.10366439819336, score:1445.117431640625
