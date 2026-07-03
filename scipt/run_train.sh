@@ -16,13 +16,13 @@ print("CUDA available:", torch.cuda.get_device_name(0))
 PY
 
 # Fixed seed plan (as requested).
-SEEDS=(2 17 27 30 33 51 62 80 88 97)
-
+SEEDS=(17 27 30 33 51 62 80 88 97)
+# 2 17 27 30 33 51 62 80 88 97
 DATASETS=(FD001 FD002 FD003 FD004)
 # FD002 FD003 FD004
 
 MAX_EPOCHS="${MAX_EPOCHS:-30}"
-MODEL_CODE="${MODEL_CODE:-SGF_MB}"
+MODEL_CODE="${MODEL_CODE:-MB}"
 BATCH_SIZE="${BATCH_SIZE:-128}"
 LR="${LR:-0.002}"
 
@@ -34,7 +34,7 @@ for DATASET in "${DATASETS[@]}"; do
   fi
 
   echo "====================================="
-  echo "SGFormer+Mamba 训练开始 | DATASET=${DATASET} | smooth_rate=${SMOOTH_RATE} | max_epochs=${MAX_EPOCHS}"
+  echo " 训练开始 | DATASET=${DATASET} | smooth_rate=${SMOOTH_RATE} | max_epochs=${MAX_EPOCHS}"
   echo "Seeds: ${SEEDS[*]}"
   echo "====================================="
 

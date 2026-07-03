@@ -32,18 +32,6 @@ def _build_log_name(model_code, lr, embed_dim, topk, time_tag):
     )
 
 
-def _build_model(args):
-    return SGFormerMambaRegressor(
-        num_sensors=args.feature_num,
-        d_model=args.d_model,
-        spatial_num_layers=args.spatial_num_layers,
-        spatial_num_heads=args.spatial_num_heads,
-        spatial_dropout=args.spatial_dropout,
-        temporal_num_layers=args.temporal_num_layers,
-        temporal_d_state=args.temporal_d_state,
-        temporal_dropout=args.temporal_dropout,
-        pooling=args.sensor_pooling,
-    )
 
 if __name__ == '__main__':
     current_dir = os.getcwd()  # Get the current directory
@@ -68,24 +56,11 @@ if __name__ == '__main__':
     parser.add_argument('--max-epochs', type=int, default=30)
     parser.add_argument('--use-exponential-smoothing', default=True)  
     parser.add_argument('--smooth-rate', type=int, default=40)
-    # SGFormer + Mamba (no encoder-decoder)
-    parser.add_argument('--d-model', dest='d_model', type=int, default=64,
-                        help='Hidden dimension for SGFormer+Mamba model')
-    parser.add_argument('--spatial-num-layers', type=int, default=2,
-                        help='Number of SGFormer spatial blocks over sensors')
-    parser.add_argument('--spatial-num-heads', type=int, default=4,
-                        help='Number of attention heads in spatial blocks')
-    parser.add_argument('--spatial-dropout', type=float, default=0.1,
-                        help='Dropout inside spatial blocks')
-    parser.add_argument('--temporal-num-layers', type=int, default=2,
-                        help='Number of temporal Mamba-style SSM blocks')
-    parser.add_argument('--temporal-d-state', type=int, default=16,
-                        help='State dimension of the temporal selective SSM')
-    parser.add_argument('--temporal-dropout', type=float, default=0.1,
-                        help='Dropout inside temporal blocks')
-    parser.add_argument('--sensor-pooling', type=str, default='mean', choices=['mean', 'cls'],
-                        help='How to pool sensor tokens into a timestep embedding')
+    parser.add_argument('--lstm-hidden-dim', type=int, default=8, help='Hidden size of LSTM for lstm/original structures')
+    parser.add_argument('--decoder-attention-size', type=int, default=28, help='Hidden size for decoder additive attention')
     parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
+    parser.add_argument('--mamba-num-layers', type=int, default=2, help='Number of Mamba layers after LSTM encoder')
+    parser.add_argument('--mamba-d-state', type=int, default=16, help='Hidden size of Mamba layers after LSTM encoder')
     parser.add_argument('--save-model', dest='save_model', action='store_true', default=True,
                         help='save trained models')
     parser.add_argument('--no-save-model', dest='save_model', action='store_false',
@@ -103,6 +78,10 @@ if __name__ == '__main__':
         raise ValueError("--model-code cannot be empty.")
 
     ablation_preset_info = None
+    encoder_hidden_size = args.lstm_hidden_dim
+    mamba_num_layers = args.mamba_num_layers
+    mamba_d_state = args.mamba_d_state
+    decoder_attention_size = args.decoder_attention_size
 
     run_output_root = os.path.join(default_log_dir, f"{args.sub_dataset}_{model_code}")
     os.makedirs(run_output_root, exist_ok=True)
@@ -131,7 +110,17 @@ if __name__ == '__main__':
                 use_exponential_smoothing=args.use_exponential_smoothing,
                 smooth_rate=args.smooth_rate)
 
-        model = _build_model(args)
+        encoder_input_size = args.feature_num
+        encoder = Seq2SeqEncoder(input_size=encoder_input_size, num_layers=2, num_hidden=encoder_hidden_size)
+        decoder = Seq2SeqDecoder(
+            input_size=encoder_input_size,
+            num_layers=2,
+            num_hidden=encoder_hidden_size,
+            seq_len=args.sequence_len,
+            attention_size=decoder_attention_size,
+        )
+        model = EncoderDecoder(encoder=encoder, decoder=decoder, use_spatial_gat=False)
+        
 
         model_type = type(model).__name__
 
@@ -152,8 +141,8 @@ if __name__ == '__main__':
         log_file_name = _build_log_name(
             model_code=model_code,
             lr=args.lr,
-            embed_dim=args.d_model,
-            topk=args.temporal_d_state,
+            embed_dim=encoder_hidden_size,
+            topk=mamba_d_state,
             time_tag=run_tag,
         )
         log_path = os.path.join(seed_output_dir, log_file_name)
@@ -167,22 +156,18 @@ if __name__ == '__main__':
             f.write(f"最大训练轮数(max_epochs): {args.max_epochs}\n")
             f.write(f"随机数种子: {num}\n")
             f.write(f"模型代号(model_code): {args.model_code}\n")
-            f.write("模型结构(model_structure): sgformer_mamba_regressor\n")
+            f.write("模型结构(model_structure): lstm_mamba_attention\n")
             f.write(f"学习率: {args.lr}\n")
             f.write("学习率调度器: step\n")
             f.write(f"Step步长(step_size): {args.step_size}\n")
             f.write(f"Step衰减系数(gamma): {args.gamma}\n")
 
-            f.write("空间模块: SGFormer(传感器维度全注意力)\n")
-            f.write(f"d_model: {args.d_model}\n")
-            f.write(f"spatial_num_layers: {args.spatial_num_layers}\n")
-            f.write(f"spatial_num_heads: {args.spatial_num_heads}\n")
-            f.write(f"spatial_dropout: {args.spatial_dropout}\n")
-            f.write("时间模块: Mamba-style selective SSM (no encoder-decoder)\n")
-            f.write(f"temporal_num_layers: {args.temporal_num_layers}\n")
-            f.write(f"temporal_d_state: {args.temporal_d_state}\n")
-            f.write(f"temporal_dropout: {args.temporal_dropout}\n")
-            f.write(f"sensor_pooling: {args.sensor_pooling}\n")
+            f.write("编码器: LSTM\n")
+            f.write("编码器后处理: 2层Mamba block\n")
+            f.write(f"encoder_hidden_size: {encoder_hidden_size}\n")
+            f.write(f"mamba_num_layers: {mamba_num_layers}\n")
+            f.write(f"mamba_d_state: {mamba_d_state}\n")
+            f.write(f"decoder_attention_size: {decoder_attention_size}\n")
             f.write("------------------------------\n")
 
 
