@@ -10,7 +10,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from test_GAT_EDmamba import *
-from test_GAT_EDmamba.AsymmetricLoss import AdaptiveAsymmetricMSELoss
+from test_GAT_EDmamba.AsymmetricLoss import JointRULLoss
 from utils import *
 # 自动创建 logs 文件夹（不存在就新建）
 default_log_dir = os.path.join(PROJECT_ROOT, "logs")
@@ -83,6 +83,21 @@ if __name__ == '__main__':
                         help='RUL threshold below which samples receive focus weighting')
     parser.add_argument('--cap-threshold', type=float, default=125.0,
                         help='RUL threshold above which healthy samples are down-weighted')
+    parser.add_argument('--loss-xi', type=float, default=0.5,
+                        help='Weight of PIVEN interval loss in the joint loss')
+    parser.add_argument('--interval-eta', type=float, default=0.95,
+                        help='Target prediction interval coverage probability')
+    parser.add_argument('--interval-lambda', type=float, default=5.0,
+                        help='PIVEN coverage penalty coefficient')
+    parser.add_argument('--uncertainty-loss', type=str, default='piven',
+                        choices=['piven', 'gaussian'],
+                        help='不确定性损失类型：piven 或 gaussian')
+    parser.add_argument('--gaussian-z', type=float, default=1.96,
+                        help='Gaussian prediction interval z value')
+    parser.add_argument('--gaussian-warmup-start', type=int, default=10,
+                        help='前多少轮只优化 asymmetric RUL loss')
+    parser.add_argument('--gaussian-warmup-epochs', type=int, default=10,
+                        help='Gaussian NLL 权重在第 11-20 轮线性增加到 loss-xi')
     args = parser.parse_args()
 
     if not 0.0 <= args.dropout <= 1.0:
@@ -143,11 +158,17 @@ if __name__ == '__main__':
             use_spatial_gat=args.use_spatial_gat,
             gat_hidden_dim=args.gat_hidden_dim,
         )
+        model.uncertainty_loss = args.uncertainty_loss
+        model.gaussian_z = float(args.gaussian_z)
 
         model_type = type(model).__name__
 
-        criterion_train = AdaptiveAsymmetricMSELoss(
+        criterion_train = JointRULLoss(
             sub_dataset=args.sub_dataset,
+            uncertainty_loss=args.uncertainty_loss,
+            xi=args.loss_xi,
+            interval_eta=args.interval_eta,
+            interval_lambda=args.interval_lambda,
             alpha=args.asym_alpha,
             gamma=args.asym_gamma,
             delta=args.asym_delta,
@@ -155,6 +176,7 @@ if __name__ == '__main__':
             cap_threshold=args.cap_threshold,
             max_rul=args.max_rul,
         )
+        criterion_train.target_xi = float(args.loss_xi)
         criterion_eval = RMSELoss()
         optimizer = torch.optim.RMSprop(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
         scheduler = torch.optim.lr_scheduler.StepLR(
@@ -200,12 +222,17 @@ if __name__ == '__main__':
             f.write(f"mamba_num_layers: {args.mamba_num_layers}\n")
             f.write(f"mamba_d_state: {args.mamba_d_state}\n")
             f.write(f"dropout: {args.dropout}\n")
-            f.write("训练损失: AdaptiveAsymmetricMSELoss\n")
+            f.write(f"训练损失: JointRULLoss({args.uncertainty_loss}+AdaptiveAsymmetricMSELoss)\n")
             f.write(f"asym_alpha: {args.asym_alpha}\n")
             f.write(f"asym_gamma: {args.asym_gamma}\n")
             f.write(f"asym_delta: {args.asym_delta}\n")
             f.write(f"focus_threshold: {args.focus_threshold}\n")
             f.write(f"cap_threshold: {args.cap_threshold}\n")
+            f.write(f"loss_xi: {args.loss_xi}\n")
+            f.write(f"interval_eta: {args.interval_eta}\n")
+            f.write(f"interval_lambda: {args.interval_lambda}\n")
+            f.write(f"uncertainty_loss: {args.uncertainty_loss}\n")
+            f.write(f"gaussian_z: {args.gaussian_z}\n")
             f.write("------------------------------\n")
 
         train(
@@ -215,7 +242,9 @@ if __name__ == '__main__':
             lines_list=[], patience=args.patience, max_rul=args.max_rul, num_test_windows=num_test_windows,
             device=torch.device('cuda') if not args.no_cuda else torch.device('cpu'), time=time, log_path=log_path,
             checkpoint_dir=seed_output_dir,
-            checkpoint_prefix='model_' + args.sub_dataset + '_' + run_tag)
+            checkpoint_prefix='model_' + args.sub_dataset + '_' + run_tag,
+            gaussian_warmup_start=args.gaussian_warmup_start,
+            gaussian_warmup_epochs=args.gaussian_warmup_epochs)
 
         model_output_dir = seed_output_dir
         os.makedirs(model_output_dir, exist_ok=True)

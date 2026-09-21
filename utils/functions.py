@@ -115,7 +115,9 @@ def validating_function(model, valid_loader, loss_func, max_rul, device):
 
 def train(model_for_train, train_loader, valid_loader, test_loader, N_EPOCH, optimizer, scheduler, loss_train,
           loss_eval, lines_list, patience, max_rul, num_test_windows, device, time, log_path,
-          checkpoint_dir=None, checkpoint_prefix=None, log_language='en'):
+          checkpoint_dir=None, checkpoint_prefix=None, log_language='en',
+          gaussian_warmup_start=10, gaussian_warmup_epochs=10,
+          cqr_warmup=False, cqr_warmup_start=10, cqr_warmup_epochs=10):
     train_start_at = datetime.datetime.now()
     train_start_perf = time_module.perf_counter()
     train_batch_length = len(train_loader)
@@ -135,16 +137,32 @@ def train(model_for_train, train_loader, valid_loader, test_loader, N_EPOCH, opt
         best_model_path = os.path.join(checkpoint_dir, "best_" + checkpoint_prefix + ".pkl")
     os.makedirs(os.path.dirname(best_model_path), exist_ok=True)
 
-        
     for epoch in range(1, N_EPOCH + 1):
         model_for_train.train()
         model_for_train.to(device)
         epoch_loss = 0
 
+        uncertainty_loss = getattr(loss_train, "uncertainty_loss", "piven")
+        use_warmup = (
+            uncertainty_loss == "gaussian"
+            or (uncertainty_loss == "cqr" and cqr_warmup)
+        )
+        if use_warmup:
+            target_xi = float(getattr(loss_train, "target_xi", loss_train.xi))
+            if uncertainty_loss == "cqr":
+                warmup_start = max(0, int(cqr_warmup_start))
+                warmup_epochs = max(1, int(cqr_warmup_epochs))
+            else:
+                warmup_start = max(0, int(gaussian_warmup_start))
+                warmup_epochs = max(1, int(gaussian_warmup_epochs))
+            warmup_progress = (epoch - warmup_start) / warmup_epochs
+            loss_train.xi = target_xi * min(max(warmup_progress, 0.0), 1.0)
+
         for batch, (x_train, y_train) in enumerate(train_loader):
             x_train, y_train = x_train.to(device), y_train.to(device)
             outputs = model_for_train(x_train)  # forward pass
-            loss = loss_train(outputs[0], y_train)
+            uncertainty_outputs = outputs[1]
+            loss = loss_train(outputs[0], uncertainty_outputs, y_train)
             epoch_loss += loss.item()
             optimizer.zero_grad()
             loss.backward()
@@ -158,16 +176,21 @@ def train(model_for_train, train_loader, valid_loader, test_loader, N_EPOCH, opt
                                                                               device=device)
         rmse_test, score_test = test_five_sample(model_for_train, test_loader, loss_eval, max_rul, num_test_windows, device)
         epoch_loss /= train_batch_length
-        epoch_loss = math.sqrt((epoch_loss)) * max_rul
+        if uncertainty_loss == "gaussian":
+            # Gaussian NLL is not an MSE and may legitimately be negative.
+            epoch_loss = epoch_loss * max_rul
+        else:
+            epoch_loss = math.sqrt(max(epoch_loss, 0.0)) * max_rul
+        current_xi = float(getattr(loss_train, "xi", 0.0))
         if str(log_language).lower().startswith('zh'):
             content = "第%d轮, 训练损失: %1.4f, 验证集RMSE: %1.4f, 验证集S分数: %1.1f, " \
-                      "测试集RMSE: %1.4f, 测试集S分数: %1.1f, 学习率: %1.8f" % \
-                      (epoch, epoch_loss, rmse_valid, valid_score, rmse_test, score_test,
+                      "测试集RMSE: %1.4f, 测试集S分数: %1.1f, xi权重: %1.4f, 学习率: %1.8f" % \
+                      (epoch, epoch_loss, rmse_valid, valid_score, rmse_test, score_test, current_xi,
                        optimizer.state_dict()['param_groups'][0]['lr'])
         else:
             content = "Epoch: %d, Loss: %1.4f, Rmse_valid: %1.4f, valid_score: %1.1f, " \
-                      ", rmse_test: %1.4f, score_test: %1.1f, Learning rate:%1.8f" % \
-                      (epoch, epoch_loss, rmse_valid, valid_score, rmse_test, score_test,
+                      ", rmse_test: %1.4f, score_test: %1.1f, xi: %1.4f, Learning rate:%1.8f" % \
+                      (epoch, epoch_loss, rmse_valid, valid_score, rmse_test, score_test, current_xi,
                        optimizer.state_dict()['param_groups'][0]['lr'])
         
         with open(log_path, "a", encoding="utf-8") as f:

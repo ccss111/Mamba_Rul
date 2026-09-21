@@ -1,0 +1,211 @@
+from .GAT import SensorSpatialGAT
+from mamba_ssm import Mamba
+from .Attention_modules import *
+
+import torch
+from torch import nn
+
+
+class Seq2SeqEncoder(nn.Module):
+
+    def __init__(self, input_size, num_layers, num_hidden):
+        super(Seq2SeqEncoder, self).__init__()
+        self.output_size = int(num_hidden)
+        self.hidden_size = int(num_hidden)
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=num_hidden,
+            num_layers=num_layers,
+            batch_first=True,
+        )
+
+    def forward(self, x):
+        output = self.lstm(x)
+        return output
+
+
+class MambaBlock(nn.Module):
+    def __init__(self, d_model, d_state=16, dropout=0.1, d_conv=4, expand=2):
+        super(MambaBlock, self).__init__()
+        self.norm = nn.LayerNorm(d_model)
+        self.mamba = Mamba(
+            d_model=d_model,
+            d_state=d_state,
+            d_conv=d_conv,
+            expand=expand,
+        )
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        residual = x
+        x = self.norm(x)
+        x = self.mamba(x)
+        x = self.dropout(x)
+        return residual + x
+
+
+class MambaBranch(nn.Module):
+    """Two sequential Mamba blocks used by the first post-GAT branch."""
+
+    def __init__(self, input_size, d_model, d_state, dropout):
+        super().__init__()
+        self.input_projection = (
+            nn.Identity() if input_size == d_model else nn.Linear(input_size, d_model)
+        )
+        self.blocks = nn.ModuleList([
+            MambaBlock(d_model=d_model, d_state=d_state, dropout=dropout),
+            MambaBlock(d_model=d_model, d_state=d_state, dropout=dropout),
+        ])
+
+    def forward(self, x):
+        output = self.input_projection(x)
+        for block in self.blocks:
+            output = block(output)
+        return output[:, -1, :]
+
+
+
+class Seq2SeqDecoder(nn.Module):
+    def __init__(self,
+                 input_size,
+                 num_layers,
+                 num_hidden,
+                 seq_len,
+                 attention_size,
+                 use_aef=True):
+        super(Seq2SeqDecoder, self).__init__()
+        self.input_size = input_size
+        self.use_aef = bool(use_aef)
+        self.lstm = torch.nn.LSTM(input_size=num_hidden,
+                                  num_layers=num_layers,
+                                  hidden_size=num_hidden,
+                                  batch_first=True)
+        self.attention = AdditiveAttentionForSeq(num_hidden=num_hidden,
+                                                 attention_size=attention_size,
+                                                 seq_len=seq_len)
+
+    # 仅保留可选AEF: 开启时使用加性注意力聚合, 关闭时回退到最后时刻编码特征
+    def forward(self, encoder_output, encoder_state):
+        use_aef = bool(getattr(self, 'use_aef', True))
+
+        if use_aef:
+            decoder_input, attention_weights = self.attention(encoder_output, encoder_state[0])
+        else:
+            decoder_input = encoder_output[:, -1:, :]
+            attention_weights = None
+
+        output, _ = self.lstm(decoder_input, encoder_state)
+        output = output[:, -1, :]
+        return output, attention_weights
+
+
+class EncoderDecoder(nn.Module):
+    def __init__(self,
+                 encoder,
+                 decoder,
+                 use_spatial_gat=True,
+                 graph_mode='dynamic_knn',
+                 num_sensors=14,
+                 gat_hidden_dim=8,
+                 gat_out_dim=16,
+                 gat_num_layers=2,
+                 gat_embed_dim=16,
+                 gat_topk=5,
+                 dropout=0.1,
+                 gat_alpha=0.1,
+                 mamba_d_state=16,
+                 mamba_d_model=16,
+                 use_decoder=True):
+        super(EncoderDecoder, self).__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.use_spatial_gat = use_spatial_gat
+        self.graph_mode = graph_mode
+        self.use_decoder = bool(use_decoder)
+
+        if self.use_decoder and self.decoder is None:
+            raise ValueError("decoder cannot be None when use_decoder=True")
+
+        if use_spatial_gat:
+            self.spatial_gat = SensorSpatialGAT(
+                num_sensors=num_sensors,
+                in_features=1,
+                hidden_features=gat_hidden_dim,
+                out_features=gat_out_dim,
+                num_layers=gat_num_layers,
+                embed_dim=gat_embed_dim,
+                topk=gat_topk,
+                graph_mode=graph_mode,
+                dropout=dropout,
+                alpha=gat_alpha,
+            )
+        else:
+            self.spatial_gat = None
+
+        self.mamba_branch = MambaBranch(
+            input_size=gat_out_dim,
+            d_model=mamba_d_model,
+            d_state=mamba_d_state,
+            dropout=dropout,
+        )
+
+        encoder_hidden_size = int(
+            getattr(self.encoder, 'output_size', 0)
+            or getattr(self.encoder, 'hidden_size', 0)
+        )
+        if encoder_hidden_size <= 0:
+            raise ValueError("failed to infer encoder hidden size")
+        self.encoder_hidden_size = encoder_hidden_size
+
+        feature_size = mamba_d_model
+        self.fusion = nn.Linear(mamba_d_model * 2, feature_size)
+        self.interval_head = nn.Linear(feature_size, 3)
+        self.gaussian_head = nn.Linear(feature_size, 1)
+
+        if not self.use_decoder:
+            self.encoder_regressor = nn.Linear(self.encoder_hidden_size, 1)
+        else:
+            self.encoder_regressor = None
+
+    def forward(self, encoder_x):
+        use_decoder = bool(getattr(self, 'use_decoder', True))
+
+        if self.use_spatial_gat:
+            encoder_x = self.spatial_gat(encoder_x)
+
+        mamba_features = self.mamba_branch(encoder_x)
+        encoder_output, encoder_state = self.encoder(encoder_x)
+
+        if use_decoder:
+            lstm_features, attention_weights = self.decoder(encoder_output, encoder_state)
+        else:
+            lstm_features = encoder_output[:, -1, :]
+            attention_weights = torch.zeros(
+                encoder_output.size(0),
+                encoder_output.size(1),
+                device=encoder_output.device,
+                dtype=encoder_output.dtype,
+            )
+
+        fused_features = self.fusion(torch.cat((mamba_features, lstm_features), dim=-1))
+
+        interval_params = self.interval_head(fused_features)
+        lower = torch.sigmoid(interval_params[:, 0:1])
+        width = torch.sigmoid(interval_params[:, 1:2]) * (1.0 - lower)
+        upper = lower + width
+        weight = torch.sigmoid(interval_params[:, 2:3])
+        point = weight * upper + (1.0 - weight) * lower
+        gaussian_head = getattr(self, "gaussian_head", None)
+        if gaussian_head is None:
+            # Older PIVEN checkpoints predate the Gaussian uncertainty head.
+            # Keep them usable by deriving a finite fallback scale from width.
+            sigma = (upper - lower).detach().clamp_min(1e-4) / 3.92
+        else:
+            sigma = torch.nn.functional.softplus(gaussian_head(fused_features)) + 1e-4
+        return point, {
+            "lower": lower,
+            "upper": upper,
+            "weight": weight,
+            "sigma": sigma,
+            "features": fused_features,
+        }

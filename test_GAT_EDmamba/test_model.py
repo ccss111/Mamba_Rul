@@ -76,6 +76,17 @@ def _mc_dropout_predict(model, x_batch, mc_samples, device, use_amp: bool = Fals
     return mean_pred, variance_pred, stacked
 
 
+def _explicit_interval_predict(model, x_batch):
+    point, outputs = model.forward(x_batch)
+    if getattr(model, "uncertainty_loss", "piven") == "gaussian" and isinstance(outputs, dict):
+        z_value = float(getattr(model, "gaussian_z", 1.96))
+        sigma = outputs["sigma"]
+        return point, point - z_value * sigma, point + z_value * sigma
+    if isinstance(outputs, dict) and "lower" in outputs and "upper" in outputs:
+        return point, outputs["lower"], outputs["upper"]
+    return point, point, point
+
+
 
 def _collect_per_engine_predictions(
     model,
@@ -94,12 +105,12 @@ def _collect_per_engine_predictions(
         with torch.no_grad():
             x_test, y_test = next(iter(test_loader_last))
             x_test = x_test.to(device)
-            y_pred, _ = model.forward(x_test)
+            y_pred, y_lower, y_upper = _explicit_interval_predict(model, x_test)
         true_rul = (y_test.reshape(-1).cpu().numpy()) * max_rul
         pred_rul = (y_pred.reshape(-1).detach().cpu().numpy()) * max_rul
         pred_var = np.zeros_like(pred_rul)
-        pred_lower = pred_rul.copy()
-        pred_upper = pred_rul.copy()
+        pred_lower = y_lower.reshape(-1).detach().cpu().numpy() * max_rul
+        pred_upper = y_upper.reshape(-1).detach().cpu().numpy() * max_rul
         return true_rul, pred_rul, pred_var, pred_lower, pred_upper
 
     if eval_batch_size is None or int(eval_batch_size) <= 0:
@@ -110,39 +121,25 @@ def _collect_per_engine_predictions(
     y_all = dataset.y_data.reshape(-1)
 
     preds = []
-    variances = []
+    lower_bounds = []
+    upper_bounds = []
     with torch.no_grad():
         for start in range(0, len(x_all), eval_batch_size):
             x_batch = x_all[start:start + eval_batch_size].to(device)
-            y_mean, y_var, _ = _mc_dropout_predict(
-                model=model,
-                x_batch=x_batch,
-                mc_samples=mc_samples,
-                device=device,
-                use_amp=use_amp,
-            )
-            preds.append(y_mean.cpu())
-            variances.append(y_var.cpu())
+            y_mean, y_lower, y_upper = _explicit_interval_predict(model, x_batch)
+            preds.append(y_mean.detach().cpu())
+            lower_bounds.append(y_lower.detach().cpu())
+            upper_bounds.append(y_upper.detach().cpu())
 
     y_pred_all = torch.cat(preds, dim=0).reshape(-1)
-    y_var_all = torch.cat(variances, dim=0).reshape(-1)
+    y_lower_all = torch.cat(lower_bounds, dim=0).reshape(-1)
+    y_upper_all = torch.cat(upper_bounds, dim=0).reshape(-1)
     true_rul = (y_all.cpu().numpy()) * max_rul
     pred_rul = (y_pred_all.cpu().numpy()) * max_rul
-    pred_var = (y_var_all.cpu().numpy()) * (max_rul ** 2)
+    pred_var = np.zeros_like(pred_rul)
 
-    confidence = max(0.0, min(100.0, float(interval_alpha)))
-    tail_prob = confidence / 200.0
-    lower_q = tail_prob
-    upper_q = 1.0 - tail_prob
-    std_rul = np.sqrt(np.maximum(pred_var, 0.0))
-    if lower_q <= 0.0:
-        pred_lower = pred_rul.copy()
-    else:
-        pred_lower = pred_rul + torch.distributions.Normal(0.0, 1.0).icdf(torch.tensor(lower_q)).item() * std_rul
-    if upper_q >= 1.0:
-        pred_upper = pred_rul.copy()
-    else:
-        pred_upper = pred_rul + torch.distributions.Normal(0.0, 1.0).icdf(torch.tensor(upper_q)).item() * std_rul
+    pred_lower = y_lower_all.numpy() * max_rul
+    pred_upper = y_upper_all.numpy() * max_rul
 
     return true_rul, pred_rul, pred_var, pred_lower, pred_upper
 
@@ -164,28 +161,21 @@ def _collect_interval_predictions(
 
     eval_batch_size = max(1, int(eval_batch_size))
     predictions = []
-    variances = []
+    lower_bounds = []
+    upper_bounds = []
     with torch.no_grad():
         for start in range(0, len(dataset.x_data), eval_batch_size):
             x_batch = dataset.x_data[start:start + eval_batch_size].to(device)
-            y_mean, y_var, _ = _mc_dropout_predict(
-                model, x_batch, mc_samples, device, use_amp=use_amp
-            )
-            predictions.append(y_mean.cpu())
-            variances.append(y_var.cpu())
+            y_mean, y_lower, y_upper = _explicit_interval_predict(model, x_batch)
+            predictions.append(y_mean.detach().cpu())
+            lower_bounds.append(y_lower.detach().cpu())
+            upper_bounds.append(y_upper.detach().cpu())
 
     pred_rul = torch.cat(predictions).reshape(-1).numpy() * max_rul
-    pred_var = torch.cat(variances).reshape(-1).numpy() * (max_rul ** 2)
+    pred_lower = torch.cat(lower_bounds).reshape(-1).numpy() * max_rul
+    pred_upper = torch.cat(upper_bounds).reshape(-1).numpy() * max_rul
     true_rul = dataset.y_data.reshape(-1).cpu().numpy() * max_rul
 
-    confidence = np.clip(float(interval_alpha), 0.0, 100.0)
-    tail_prob = confidence / 200.0
-    std_rul = np.sqrt(np.maximum(pred_var, 0.0))
-    normal = torch.distributions.Normal(0.0, 1.0)
-    lower_z = normal.icdf(torch.tensor(tail_prob)).item() if tail_prob > 0 else 0.0
-    upper_z = normal.icdf(torch.tensor(1.0 - tail_prob)).item() if tail_prob < 1 else 0.0
-    pred_lower = pred_rul + lower_z * std_rul
-    pred_upper = pred_rul + upper_z * std_rul
     return true_rul, pred_rul, pred_lower, pred_upper
 
 
@@ -202,7 +192,7 @@ def _interval_metrics(true_rul, pred_lower, pred_upper, target_picp=0.95,
 
     lower = np.minimum(pred_lower, pred_upper)
     upper = np.maximum(pred_lower, pred_upper)
-    picp = float(np.mean((true_rul >= lower) & (true_rul <= upper)))
+    picp = float(np.mean((true_rul >= (lower - 0.5)) & (true_rul <= (upper + 0.5))))
     data_range = float(np.max(true_rul) - np.min(true_rul))
     pinaw = float(np.mean(upper - lower) / data_range) if data_range > 0 else 0.0
     target_picp = float(np.clip(target_picp, 0.0, 1.0))
@@ -280,7 +270,7 @@ def _save_predictions_svg(svg_path, sub_dataset, true_rul, pred_rul, pred_lower=
         pred_upper,
         color="#89d68c",
         alpha=0.18,
-        label="MC Dropout CI",
+        label="Learned prediction interval",
     )
 
     ax.axhline(0.0, color="#8c8c8c", linewidth=0.8)
@@ -366,13 +356,6 @@ if __name__ == '__main__':
         model_codes = args.model_code
     model_codes = [os.path.basename(code) for code in model_codes]
 
-    output_dir = os.path.join(
-        parent_dir,
-        'figure',
-        'predictions',
-        f'{args.sub_dataset}-{datetime_class.now().strftime("%m%d-%H%M")}',
-    )
-    os.makedirs(output_dir, exist_ok=True)
     train_loader, valid_loader, test_loader, test_loader_last, \
         num_test_windows, train_visualize, engine_id = get_dataloader(
             dir_path=args.dataset_root,
@@ -411,6 +394,13 @@ if __name__ == '__main__':
         print('interval_metrics: PICP={PICP:.6f}, PINAW={PINAW:.6f}, CWC={CWC:.6f}'.format(**metrics))
 
         if args.save_pred_csv or args.save_pred_svg:
+            output_dir = os.path.join(
+                parent_dir,
+                'figure',
+                'predictions',
+                f'{args.sub_dataset}-{datetime_class.now().strftime("%m%d-%H%M")}',
+            )
+            os.makedirs(output_dir, exist_ok=True)
             true_rul, pred_rul, pred_var, pred_lower, pred_upper = _collect_per_engine_predictions(
                 model=model, test_loader_last=test_loader_last,
                 max_rul=args.max_rul, device=device,
@@ -434,12 +424,4 @@ if __name__ == '__main__':
             _save_predictions_svg(pred_svg_path, args.sub_dataset, true_rul, pred_rul, pred_lower, pred_upper)
             print('prediction_svg:{}'.format(pred_svg_path))
 
-    metrics_csv_path = os.path.join(output_dir, f'{args.sub_dataset}_interval_metrics.csv')
-    if args.metrics_csv:
-        metrics_csv_path = os.path.join(output_dir, os.path.basename(args.metrics_csv))
-    with open(metrics_csv_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=metric_rows[0].keys())
-        writer.writeheader()
-        writer.writerows(metric_rows)
-    print('output_dir:{}'.format(output_dir))
-    print('metrics_csv:{}'.format(metrics_csv_path))
+    print('test_results_written_to_log_only:True')

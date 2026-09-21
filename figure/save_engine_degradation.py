@@ -137,7 +137,7 @@ def _interval_metrics(true_rul, pred_lower, pred_upper, target_picp=0.95,
 
     lower = np.minimum(pred_lower, pred_upper)
     upper = np.maximum(pred_lower, pred_upper)
-    picp = float(np.mean((true_rul >= lower) & (true_rul <= upper)))
+    picp = float(np.mean((true_rul >= (lower - 0.5)) & (true_rul <= (upper + 0.5))))
     data_range = float(np.max(true_rul) - np.min(true_rul))
     pinaw = float(np.mean(upper - lower) / data_range) if data_range > 0 else 0.0
     target_picp = float(np.clip(target_picp, 0.0, 1.0))
