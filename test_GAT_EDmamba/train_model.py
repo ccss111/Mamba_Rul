@@ -10,7 +10,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from test_GAT_EDmamba import *
-from test_GAT_EDmamba.AsymmetricLoss import JointRULLoss
+from test_GAT_EDmamba import JointRULLoss
 from utils import *
 # 自动创建 logs 文件夹（不存在就新建）
 default_log_dir = os.path.join(PROJECT_ROOT, "logs")

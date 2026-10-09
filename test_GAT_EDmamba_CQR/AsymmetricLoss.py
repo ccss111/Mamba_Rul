@@ -87,7 +87,7 @@ class PIVENIntervalLoss(nn.Module):
 class CQRIntervalLoss(nn.Module):
     """Pinball loss for the lower and upper quantiles used by CQR."""
 
-    def __init__(self, alpha=0.1):
+    def __init__(self, alpha=0.05):
         super().__init__()
         if not 0.0 < alpha < 1.0:
             raise ValueError("alpha must be between 0 and 1.")

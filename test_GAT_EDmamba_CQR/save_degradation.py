@@ -126,7 +126,7 @@ def _interval_metrics(true_rul, pred_lower, pred_upper, target_picp=0.95):
 	true_rul = np.asarray(true_rul, dtype=np.float64).reshape(-1)
 	lower = np.minimum(pred_lower, pred_upper)
 	upper = np.maximum(pred_lower, pred_upper)
-	covered = (true_rul >= (lower-0.5)) & (true_rul <= (upper+0.5))
+	covered = (true_rul >= lower) & (true_rul <= upper)
 	picp = float(np.mean(covered))
 	data_range = float(np.max(true_rul) - np.min(true_rul))
 	pinaw = float(np.mean(upper - lower) / data_range) if data_range > 0 else 0.0
@@ -135,6 +135,24 @@ def _interval_metrics(true_rul, pred_lower, pred_upper, target_picp=0.95):
 	else:
 		cwc = pinaw * (1.0 + np.exp(-50.0 * (picp - target_picp)))
 	return {"PICP": picp, "PINAW": pinaw, "CWC": float(cwc)}
+
+
+def _average_interval_score(true_rul, pred_lower, pred_upper, alpha=0.05):
+	true_rul = np.asarray(true_rul, dtype=np.float64).reshape(-1)
+	lower = np.minimum(np.asarray(pred_lower, dtype=np.float64),
+					   np.asarray(pred_upper, dtype=np.float64)).reshape(-1)
+	upper = np.maximum(np.asarray(pred_lower, dtype=np.float64),
+					   np.asarray(pred_upper, dtype=np.float64)).reshape(-1)
+	if not (len(true_rul) == len(lower) == len(upper)):
+		raise ValueError("true values and interval bounds must have the same length")
+	if len(true_rul) == 0:
+		raise ValueError("cannot calculate AIS for an empty engine")
+	if not 0.0 < alpha < 1.0:
+		raise ValueError("AIS alpha must be between 0 and 1")
+	score = -2.0 * alpha * (upper - lower)
+	score -= 4.0 * np.where(true_rul < lower, lower - true_rul, 0.0)
+	score -= 4.0 * np.where(true_rul > upper, true_rul - upper, 0.0)
+	return float(np.mean(score))
 
 
 def _save_metrics(path, rows):
@@ -185,6 +203,8 @@ def main():
 	parser.add_argument("--no-cuda", action="store_true")
 	parser.add_argument("--degradation-svg-path", default="")
 	parser.add_argument("--metrics-csv", default="")
+	parser.add_argument("--ais-alpha", type=float, default=0.05,
+					help="AIS区间错误率alpha，默认0.05（对应95%%区间）")
 	parser.add_argument(
 		"--all-engines-length", action="store_true",
 		help="计算整个子数据集所有发动机、所有窗口的平均预测区间长度",
@@ -220,6 +240,9 @@ def main():
 		model, loader, args.max_rul, device, max(1, args.eval_batch_size)
 	)
 	metrics = _interval_metrics(true_rul, pred_lower, pred_upper)
+	metrics["AIS"] = _average_interval_score(
+		true_rul, pred_lower, pred_upper, alpha=args.ais_alpha
+	)
 	model_code, seed = _model_code_and_seed(model_path, args.sub_dataset)
 
 	output_dir = os.path.join(
@@ -251,5 +274,6 @@ def main():
 	}])
 	print(f"model_path:{model_path}")
 	print(f"degradation_svg:{output_path}")
+	print("interval_metrics: PICP={PICP:.6f}, PINAW={PINAW:.6f}, CWC={CWC:.6f}, AIS={AIS:.6f}".format(**metrics))
 if __name__ == "__main__":
 	main()

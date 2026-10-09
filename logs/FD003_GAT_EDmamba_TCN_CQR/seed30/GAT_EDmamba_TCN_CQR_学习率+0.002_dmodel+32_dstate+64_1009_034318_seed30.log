@@ -1,0 +1,38 @@
+-----FD003-----
+关键参数:
+序列长度: 30
+批大小(batch_size): 128
+最大训练轮数(max_epochs): 30
+随机数种子: 30
+模型代号(model_code): GAT_EDmamba_TCN_CQR
+模型结构(model_structure): mamba_mamba
+平滑率(smooth_rate): 30
+学习率: 0.002
+学习率调度器: step
+Step步长(step_size): 10
+Step衰减系数(gamma): 0.1
+use_gat: True
+gat_hidden_dim: 8
+编码器: 2层Mamba
+解码器: 2层Mamba
+mamba_d_model: 32
+mamba_num_layers: 2
+mamba_d_state: 64
+dropout: 0.1
+tcn_channels: 16
+tcn_kernel_sizes: [3, 5, 7]
+tcn_dilations: [1, 2, 4]
+训练损失: JointRULLoss(CQR+AdaptiveAsymmetricMSELoss)
+asym_alpha: 3.5
+asym_gamma: 5.0
+asym_delta: 0.9
+focus_threshold: 35.0
+cap_threshold: 125.0
+loss_xi: 0.5
+interval_eta: 0.95
+interval_lambda: 5.0
+uncertainty_loss: cqr
+interval_alpha: 0.05
+cqr_warmup: False
+------------------------------
+Epoch: 1, Loss: 25.5037, Rmse_valid: 27.7572, valid_score: 105177.0, , rmse_test: 24.4683, score_test: 3231.1, xi: 0.5000, Learning rate:0.00200000

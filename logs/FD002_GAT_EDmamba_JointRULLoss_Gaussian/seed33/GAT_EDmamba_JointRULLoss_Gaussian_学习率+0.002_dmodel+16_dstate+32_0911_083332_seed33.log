@@ -68,3 +68,16 @@ model_path:/Mamba_Rul/logs/FD002_GAT_EDmamba_JointRULLoss_Gaussian/seed33/model_
 rmse_final:13.89855670928955, score:894.0138549804688
 interval_metrics: PICP=0.942384, PINAW=0.454888, CWC=1.120609
 test_results_written_to_log_only:True
+
+[AIS Evaluation]
+[AIS Evaluation] model_path: /Mamba_Rul/logs/FD002_GAT_EDmamba_JointRULLoss_Gaussian/seed33/model_FD002_0911_083332_seed33.pkl
+[AIS Evaluation] ais_alpha: 0.05
+[AIS Evaluation] rmse_final:14.067954063415527, score:913.5936279296875
+[AIS Evaluation] interval_metrics: PICP=0.944751, PINAW=0.460519, CWC=1.059233, AIS=-7.373217
+
+[Requested Interval Evaluation]
+checkpoint: /Mamba_Rul/logs/FD002_GAT_EDmamba_JointRULLoss_Gaussian/seed33/best_model_FD002_0911_083332_seed33.pkl
+model_path:/Mamba_Rul/logs/FD002_GAT_EDmamba_JointRULLoss_Gaussian/seed33/best_model_FD002_0911_083332_seed33.pkl
+rmse_final:13.866016387939453, score:888.3772583007812
+interval_metrics: PICP=0.941594, PINAW=0.456909, CWC=1.152504, AIS=-7.274112
+test_results_written_to_log_only:True

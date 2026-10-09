@@ -68,3 +68,9 @@ model_path:/Mamba_Rul/logs/FD002_GAT_EDmamba_JointRULLoss_CQR/seed80/model_FD002
 rmse_final:14.754228591918945, score:864.798583984375
 interval_metrics: PICP=0.830308, PINAW=0.276758, CWC=110.223585
 test_results_written_to_log_only:True
+
+[AIS Evaluation]
+[AIS Evaluation] model_path: /Mamba_Rul/logs/FD002_GAT_EDmamba_JointRULLoss_CQR/seed80/model_FD002_0921_060023_seed80.pkl
+[AIS Evaluation] ais_alpha: 0.1
+[AIS Evaluation] rmse_final:14.44961929321289, score:757.8020629882812
+[AIS Evaluation] interval_metrics: PICP=0.917127, PINAW=0.345561, CWC=2.133496, AIS=-10.990634

@@ -68,3 +68,16 @@ model_path:/Mamba_Rul/logs/FD004_GAT_EDmamba_JointRULLoss_Gaussian_warm-up_xi/se
 rmse_final:16.480804443359375, score:1293.2318115234375
 interval_metrics: PICP=0.950669, PINAW=0.662538, CWC=0.662538
 test_results_written_to_log_only:True
+
+[AIS Evaluation]
+[AIS Evaluation] model_path: /Mamba_Rul/logs/FD004_GAT_EDmamba_JointRULLoss_Gaussian_warm-up_xi/seed51/model_FD004_0920_182620_seed51.pkl
+[AIS Evaluation] ais_alpha: 0.05
+[AIS Evaluation] rmse_final:17.099802017211914, score:1554.663330078125
+[AIS Evaluation] interval_metrics: PICP=0.943144, PINAW=0.656059, CWC=1.580380, AIS=-10.026238
+
+[Requested Interval Evaluation]
+checkpoint: /Mamba_Rul/logs/FD004_GAT_EDmamba_JointRULLoss_Gaussian_warm-up_xi/seed51/best_model_FD004_0920_182620_seed51.pkl
+model_path:/Mamba_Rul/logs/FD004_GAT_EDmamba_JointRULLoss_Gaussian_warm-up_xi/seed51/best_model_FD004_0920_182620_seed51.pkl
+rmse_final:16.387815475463867, score:1265.2921142578125
+interval_metrics: PICP=0.943980, PINAW=0.657168, CWC=1.545142, AIS=-9.841460
+test_results_written_to_log_only:True

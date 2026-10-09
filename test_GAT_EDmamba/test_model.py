@@ -192,7 +192,7 @@ def _interval_metrics(true_rul, pred_lower, pred_upper, target_picp=0.95,
 
     lower = np.minimum(pred_lower, pred_upper)
     upper = np.maximum(pred_lower, pred_upper)
-    picp = float(np.mean((true_rul >= (lower - 0.5)) & (true_rul <= (upper + 0.5))))
+    picp = float(np.mean((true_rul >= lower) & (true_rul <= upper)))
     data_range = float(np.max(true_rul) - np.min(true_rul))
     pinaw = float(np.mean(upper - lower) / data_range) if data_range > 0 else 0.0
     target_picp = float(np.clip(target_picp, 0.0, 1.0))
@@ -201,6 +201,24 @@ def _interval_metrics(true_rul, pred_lower, pred_upper, target_picp=0.95,
     else:
         cwc = pinaw * (1.0 + cwc_gamma * np.exp(-cwc_eta * (picp - target_picp)))
     return {"PICP": picp, "PINAW": pinaw, "CWC": float(cwc)}
+
+
+def _average_interval_score(true_rul, pred_lower, pred_upper, alpha=0.05):
+    true_rul = np.asarray(true_rul, dtype=np.float64).reshape(-1)
+    lower = np.minimum(np.asarray(pred_lower, dtype=np.float64),
+                       np.asarray(pred_upper, dtype=np.float64)).reshape(-1)
+    upper = np.maximum(np.asarray(pred_lower, dtype=np.float64),
+                       np.asarray(pred_upper, dtype=np.float64)).reshape(-1)
+    if not (len(true_rul) == len(lower) == len(upper)):
+        raise ValueError("true values and interval bounds must have the same length")
+    if len(true_rul) == 0:
+        raise ValueError("cannot calculate AIS for an empty test set")
+    if not 0.0 < alpha < 1.0:
+        raise ValueError("AIS alpha must be between 0 and 1")
+    score = -2.0 * alpha * (upper - lower)
+    score -= 4.0 * np.where(true_rul < lower, lower - true_rul, 0.0)
+    score -= 4.0 * np.where(true_rul > upper, true_rul - upper, 0.0)
+    return float(np.mean(score))
 
 def _save_predictions_csv(csv_path, true_rul, pred_rul, pred_var=None, pred_lower=None, pred_upper=None):
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
@@ -337,6 +355,8 @@ if __name__ == '__main__':
                         help='正态区间的双侧显著性水平a，95%%置信区间对应5')
     parser.add_argument('--target-picp', type=float, default=0.95,
                         help='CWC目标覆盖率，默认0.95')
+    parser.add_argument('--ais-alpha', type=float, default=0.05,
+                        help='AIS区间错误率alpha，默认0.05（对应95%%区间）')
     parser.add_argument('--cwc-eta', type=float, default=50.0,
                         help='CWC覆盖率惩罚强度')
     parser.add_argument('--cwc-gamma', type=float, default=1.0,
@@ -386,12 +406,14 @@ if __name__ == '__main__':
             target_picp=args.target_picp, cwc_eta=args.cwc_eta,
             cwc_gamma=args.cwc_gamma,
         )
+        metrics['AIS'] = _average_interval_score(
+            true_all, lower_all, upper_all, alpha=args.ais_alpha)
         row = {'model_path': model_path, 'model_code': model_code,
                'rmse': rmse_final, 'score': score, **metrics}
         metric_rows.append(row)
         print('model_path:{}'.format(model_path))
         print('rmse_final:{}, score:{}'.format(rmse_final, score))
-        print('interval_metrics: PICP={PICP:.6f}, PINAW={PINAW:.6f}, CWC={CWC:.6f}'.format(**metrics))
+        print('interval_metrics: PICP={PICP:.6f}, PINAW={PINAW:.6f}, CWC={CWC:.6f}, AIS={AIS:.6f}'.format(**metrics))
 
         if args.save_pred_csv or args.save_pred_svg:
             output_dir = os.path.join(

@@ -268,7 +268,7 @@ if __name__ == '__main__':
 
         auto_test_cmd = [
             sys.executable,
-            os.path.join(parent_dir, 'test_GAT_EDmamba', 'test_model.py'),
+            os.path.join(parent_dir, 'test_GAT_EDmamba_CQR', 'test_model.py'),
             '--sub-dataset', args.sub_dataset,
             '--smooth-rate', str(args.smooth_rate),
             '--sequence-len', str(args.sequence_len),

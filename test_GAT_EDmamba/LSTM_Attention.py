@@ -99,13 +99,14 @@ class Seq2SeqDecoder(nn.Module):
             )
             for _ in range(self.mamba_num_layers)
         ])
+        self.Linear = nn.Linear(self.mamba_d_model, 1)
 
     def forward(self, encoder_output, encoder_state):
         decoder_input = self.input_projection(encoder_output)
         output = decoder_input
         for block in self.blocks:
             output = block(output)
-        output = output[:, -1, :]
+        output = self.Linear(output[:, -1, :])
         return output, None
 
 
@@ -158,12 +159,6 @@ class EncoderDecoder(nn.Module):
             raise ValueError("failed to infer encoder hidden size")
         self.encoder_hidden_size = encoder_hidden_size
 
-        feature_size = self.encoder_hidden_size
-        if self.use_decoder:
-            feature_size = int(getattr(self.decoder, "mamba_d_model", feature_size))
-        self.interval_head = nn.Linear(feature_size, 3)
-        self.gaussian_head = nn.Linear(feature_size, 1)
-
         if not self.use_decoder:
             self.encoder_regressor = nn.Linear(self.encoder_hidden_size, 1)
         else:
@@ -178,33 +173,15 @@ class EncoderDecoder(nn.Module):
         encoder_output, encoder_state = self.encoder(encoder_x)
 
         if use_decoder:
-            fused_features, attention_weights = self.decoder(encoder_output, encoder_state)
-        else:
-            fused_features = encoder_output[:, -1, :]
-            attention_weights = torch.zeros(
-                encoder_output.size(0),
-                encoder_output.size(1),
-                device=encoder_output.device,
-                dtype=encoder_output.dtype,
-            )
+            output, attention_weights = self.decoder(encoder_output, encoder_state)
+            return output, attention_weights
 
-        interval_params = self.interval_head(fused_features)
-        lower = torch.sigmoid(interval_params[:, 0:1])
-        width = torch.sigmoid(interval_params[:, 1:2]) * (1.0 - lower)
-        upper = lower + width
-        weight = torch.sigmoid(interval_params[:, 2:3])
-        point = weight * upper + (1.0 - weight) * lower
-        gaussian_head = getattr(self, "gaussian_head", None)
-        if gaussian_head is None:
-            # Older PIVEN checkpoints predate the Gaussian uncertainty head.
-            # Keep them usable by deriving a finite fallback scale from width.
-            sigma = (upper - lower).detach().clamp_min(1e-4) / 3.92
-        else:
-            sigma = torch.nn.functional.softplus(gaussian_head(fused_features)) + 1e-4
-        return point, {
-            "lower": lower,
-            "upper": upper,
-            "weight": weight,
-            "sigma": sigma,
-            "features": fused_features,
-        }
+        last_hidden = encoder_output[:, -1, :]
+        output = self.encoder_regressor(last_hidden)
+        attention_weights = torch.zeros(
+            encoder_output.size(0),
+            encoder_output.size(1),
+            device=encoder_output.device,
+            dtype=encoder_output.dtype,
+        )
+        return output, attention_weights
