@@ -22,8 +22,10 @@ class GraphAttentionLayer(nn.Module):
 		dst_score = self.attn_dst(h)
 		e = self.leaky_relu(src_score + dst_score.transpose(1, 2))
 
-		masked_e = e.masked_fill(adjacency <= 0, float("-inf"))
-		attention = torch.softmax(masked_e, dim=-1)
+		# Use a differentiable bias instead of a boolean mask so graph weights
+		# can carry gradients back to the sensor embeddings.
+		attention_logits = e + torch.log(adjacency + 1e-8)
+		attention = torch.softmax(attention_logits, dim=-1)
 		attention = self.dropout(attention)
 		return torch.bmm(attention, h)
 
@@ -40,6 +42,7 @@ class SensorSpatialGAT(nn.Module):
 				 embed_dim=16,
 				 topk=5,
 				 graph_mode="dynamic_knn",
+				 graph_temperature=0.2,
 				 dropout=0.0,
 				 alpha=0.1):
 		super(SensorSpatialGAT, self).__init__()
@@ -55,6 +58,9 @@ class SensorSpatialGAT(nn.Module):
 		self.num_layers = num_layers
 		self.embed_dim = embed_dim
 		self.graph_mode = graph_mode
+		if graph_temperature <= 0:
+			raise ValueError("graph_temperature must be greater than 0.")
+		self.graph_temperature = graph_temperature
 		if topk is None:
 			topk = num_sensors
 		self.topk = max(1, min(int(topk), num_sensors))
@@ -95,16 +101,28 @@ class SensorSpatialGAT(nn.Module):
 		return torch.matmul(normed_embeddings, normed_embeddings.transpose(0, 1))
 
 	def _build_knn_adjacency(self, cosine_similarity):
+		# get top-k indices for each row(-1) in the cosine similarity matrix
 		topk_indices = torch.topk(cosine_similarity, self.topk, dim=-1)[1]
-		adjacency = torch.zeros(
+		# create 0 matrix
+		hard_adjacency = torch.zeros(
 			self.num_sensors,
 			self.num_sensors,
 			device=cosine_similarity.device,
 			dtype=cosine_similarity.dtype,
 		)
-		adjacency.scatter_(1, topk_indices, 1.0)
-		adjacency.fill_diagonal_(1.0)
-		return adjacency
+		# fill in the top-k indices with 1
+		hard_adjacency.scatter_(1, topk_indices, 1.0)
+		# ensure self-loops
+		hard_adjacency.fill_diagonal_(1.0)
+
+		# Keep hard top-k connectivity in the forward pass while supplying a
+		# continuous surrogate gradient for sensor_embedding during backprop.
+		# Normalize each row 
+		soft_adjacency = torch.softmax(
+			cosine_similarity / self.graph_temperature,
+			dim=-1,
+		)
+		return hard_adjacency + soft_adjacency - soft_adjacency.detach()
 
 	def _build_path_adjacency(self, device, dtype):
 		adjacency = torch.eye(self.num_sensors, device=device, dtype=dtype)

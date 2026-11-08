@@ -47,6 +47,8 @@ if __name__ == '__main__':
     parser.add_argument('--max-rul', type=int, default=125, help='piece-wise RUL')
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--lr', type=float, default=2e-3)
+    parser.add_argument('--grad-clip-norm', type=float, default=1.0,
+                        help='Maximum total gradient norm; use 0 to disable clipping')
     parser.add_argument('--lr-scheduler', type=str, default='step', choices=['step'],
                         help='learning rate scheduler type (step only)')
     parser.add_argument('--step-size', type=int, default=10, help='interval of learning rate scheduler')
@@ -59,6 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--use-spatial-gat', action='store_true', default=True, help='Whether to use spatial GAT')
     parser.add_argument('--gat-hidden-dim', type=int, default=8, help='Hidden size of GAT blocks')
     parser.add_argument('--gat-out-dim', type=int, default=16, help='Output feature size of GAT blocks')
+    parser.add_argument('--graph_temperature', type=float, default=0.2, help='Temperature for graph attention')
     parser.add_argument('--mamba-d-model', type=int, default=10, help='input/output size of encoder/decoder Mamba blocks')
     parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
     parser.add_argument('--mamba-num-layers', type=int, default=2, help='Number of Mamba layers')
@@ -152,6 +155,7 @@ if __name__ == '__main__':
             mamba_d_model=args.mamba_d_model,
             mamba_d_state=args.mamba_d_state,
             mamba_dropout=args.dropout,
+            
         )
         model = EncoderDecoder(
             encoder=encoder,
@@ -160,6 +164,7 @@ if __name__ == '__main__':
             use_spatial_gat=args.use_spatial_gat,
             gat_hidden_dim=args.gat_hidden_dim,
             gat_out_dim=args.gat_out_dim,
+            graph_temperature=args.graph_temperature,
         )
         model.uncertainty_loss = args.uncertainty_loss
         model.cqr_alpha = float(args.interval_alpha)
@@ -249,6 +254,7 @@ if __name__ == '__main__':
             device=torch.device('cuda') if not args.no_cuda else torch.device('cpu'), time=time, log_path=log_path,
             checkpoint_dir=seed_output_dir,
             checkpoint_prefix='model_' + args.sub_dataset + '_' + run_tag,
+            grad_clip_norm=args.grad_clip_norm if args.grad_clip_norm > 0 else None,
             cqr_warmup=args.cqr_warmup,
             )
 

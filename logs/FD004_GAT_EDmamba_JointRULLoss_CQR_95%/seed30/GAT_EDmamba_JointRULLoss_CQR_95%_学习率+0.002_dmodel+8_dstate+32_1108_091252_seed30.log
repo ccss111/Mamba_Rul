@@ -1,0 +1,71 @@
+-----FD004-----
+关键参数:
+序列长度: 30
+批大小(batch_size): 128
+最大训练轮数(max_epochs): 30
+随机数种子: 30
+模型代号(model_code): GAT_EDmamba_JointRULLoss_CQR_95%
+模型结构(model_structure): mamba_mamba
+平滑率(smooth_rate): 40
+学习率: 0.002
+学习率调度器: step
+Step步长(step_size): 10
+Step衰减系数(gamma): 0.1
+use_gat: True
+gat_hidden_dim: 8
+编码器: 2层Mamba
+解码器: 2层Mamba
+mamba_d_model: 8
+mamba_num_layers: 2
+mamba_d_state: 32
+dropout: 0.1
+训练损失: JointRULLoss(CQR+AdaptiveAsymmetricMSELoss)
+asym_alpha: 2.0
+asym_gamma: 5.0
+asym_delta: 0.9
+focus_threshold: 35.0
+cap_threshold: 125.0
+loss_xi: 0.5
+interval_eta: 0.95
+interval_lambda: 5.0
+uncertainty_loss: cqr
+interval_alpha: 0.05
+cqr_warmup: False
+------------------------------
+Epoch: 1, Loss: 34.2707, Rmse_valid: 32.3430, valid_score: 160131.8, , rmse_test: 33.2897, score_test: 8729.1, xi: 0.5000, Learning rate:0.00200000
+Epoch: 2, Loss: 28.6499, Rmse_valid: 32.2577, valid_score: 328458.8, , rmse_test: 29.5222, score_test: 7150.4, xi: 0.5000, Learning rate:0.00200000
+Epoch: 3, Loss: 25.8272, Rmse_valid: 24.4138, valid_score: 255933.8, , rmse_test: 27.2580, score_test: 7682.1, xi: 0.5000, Learning rate:0.00200000
+Epoch: 4, Loss: 24.0949, Rmse_valid: 22.5504, valid_score: 69222.7, , rmse_test: 22.0857, score_test: 2482.5, xi: 0.5000, Learning rate:0.00200000
+Epoch: 5, Loss: 23.0477, Rmse_valid: 19.5227, valid_score: 36285.2, , rmse_test: 20.6955, score_test: 2081.3, xi: 0.5000, Learning rate:0.00200000
+Epoch: 6, Loss: 22.1565, Rmse_valid: 21.6360, valid_score: 68145.6, , rmse_test: 21.2022, score_test: 2019.9, xi: 0.5000, Learning rate:0.00200000
+Epoch: 7, Loss: 21.7467, Rmse_valid: 17.8547, valid_score: 31498.0, , rmse_test: 19.5589, score_test: 1789.6, xi: 0.5000, Learning rate:0.00200000
+Epoch: 8, Loss: 21.2312, Rmse_valid: 21.0499, valid_score: 83149.9, , rmse_test: 21.5853, score_test: 2792.4, xi: 0.5000, Learning rate:0.00200000
+Epoch: 9, Loss: 21.0172, Rmse_valid: 17.2115, valid_score: 32704.8, , rmse_test: 17.7904, score_test: 1376.1, xi: 0.5000, Learning rate:0.00200000
+Epoch: 10, Loss: 20.4808, Rmse_valid: 18.7235, valid_score: 36138.4, , rmse_test: 20.9014, score_test: 1869.6, xi: 0.5000, Learning rate:0.00200000
+Epoch: 11, Loss: 18.5478, Rmse_valid: 17.1336, valid_score: 35295.2, , rmse_test: 18.5813, score_test: 1486.4, xi: 0.5000, Learning rate:0.00020000
+Epoch: 12, Loss: 18.3135, Rmse_valid: 17.1684, valid_score: 36961.9, , rmse_test: 18.3850, score_test: 1506.0, xi: 0.5000, Learning rate:0.00020000
+Epoch: 13, Loss: 18.1879, Rmse_valid: 17.3382, valid_score: 38217.2, , rmse_test: 18.9448, score_test: 1607.8, xi: 0.5000, Learning rate:0.00020000
+Epoch: 14, Loss: 18.0910, Rmse_valid: 18.1814, valid_score: 44124.3, , rmse_test: 19.2815, score_test: 1706.3, xi: 0.5000, Learning rate:0.00020000
+Epoch: 15, Loss: 18.0772, Rmse_valid: 17.6674, valid_score: 42973.0, , rmse_test: 18.9115, score_test: 1535.5, xi: 0.5000, Learning rate:0.00020000
+Epoch: 16, Loss: 17.9382, Rmse_valid: 17.1512, valid_score: 44138.0, , rmse_test: 18.4372, score_test: 1462.9, xi: 0.5000, Learning rate:0.00020000
+Epoch: 17, Loss: 17.8297, Rmse_valid: 17.1991, valid_score: 42793.4, , rmse_test: 18.1452, score_test: 1452.0, xi: 0.5000, Learning rate:0.00020000
+Epoch: 18, Loss: 17.8274, Rmse_valid: 17.5787, valid_score: 46740.8, , rmse_test: 18.6661, score_test: 1484.3, xi: 0.5000, Learning rate:0.00020000
+Epoch: 19, Loss: 17.7610, Rmse_valid: 17.4044, valid_score: 45505.4, , rmse_test: 18.5679, score_test: 1555.8, xi: 0.5000, Learning rate:0.00020000
+Epoch: 20, Loss: 17.6961, Rmse_valid: 16.8835, valid_score: 48454.7, , rmse_test: 17.8786, score_test: 1400.1, xi: 0.5000, Learning rate:0.00020000
+Epoch: 21, Loss: 17.5572, Rmse_valid: 17.0029, valid_score: 49408.9, , rmse_test: 18.3003, score_test: 1466.8, xi: 0.5000, Learning rate:0.00002000
+Epoch: 22, Loss: 17.5017, Rmse_valid: 17.2542, valid_score: 50026.7, , rmse_test: 18.2947, score_test: 1465.1, xi: 0.5000, Learning rate:0.00002000
+Epoch: 23, Loss: 17.5251, Rmse_valid: 16.8985, valid_score: 49901.6, , rmse_test: 18.2455, score_test: 1443.7, xi: 0.5000, Learning rate:0.00002000
+Epoch: 24, Loss: 17.5167, Rmse_valid: 17.3051, valid_score: 48581.1, , rmse_test: 18.2728, score_test: 1446.1, xi: 0.5000, Learning rate:0.00002000
+Epoch: 25, Loss: 17.5036, Rmse_valid: 17.3308, valid_score: 49152.9, , rmse_test: 18.3806, score_test: 1451.3, xi: 0.5000, Learning rate:0.00002000
+Epoch: 26, Loss: 17.5238, Rmse_valid: 17.3127, valid_score: 49895.9, , rmse_test: 18.2962, score_test: 1451.7, xi: 0.5000, Learning rate:0.00002000
+Epoch: 27, Loss: 17.5135, Rmse_valid: 17.3008, valid_score: 48997.1, , rmse_test: 18.3133, score_test: 1453.7, xi: 0.5000, Learning rate:0.00002000
+Epoch: 28, Loss: 17.5025, Rmse_valid: 17.4204, valid_score: 49520.1, , rmse_test: 18.3735, score_test: 1456.4, xi: 0.5000, Learning rate:0.00002000
+Epoch: 29, Loss: 17.4962, Rmse_valid: 17.4693, valid_score: 49998.5, , rmse_test: 18.4215, score_test: 1470.6, xi: 0.5000, Learning rate:0.00002000
+Epoch: 30, Loss: 17.5157, Rmse_valid: 17.3639, valid_score: 48736.6, , rmse_test: 18.3720, score_test: 1457.9, xi: 0.5000, Learning rate:0.00002000
+[Train Summary] Restored best model from epoch 20, rmse_valid: 16.8835, valid_score: 48454.7, rmse_test: 17.8786, score_test: 1400.1
+[Train Time] start: 2026-11-08 09:12:52, end: 2026-11-08 09:25:13, duration: 0:12:21, total_seconds: 741.24
+[Auto Test] command: /usr/local/miniconda3/envs/HV/bin/python /Mamba_Rul/test_GAT_EDmamba_CQR/test_model.py --sub-dataset FD004 --smooth-rate 40 --sequence-len 30 --feature-num 14 --dataset-root /Mamba_Rul/CMAPSSData/ --max-rul 125 --batch-size 128 --model-path /Mamba_Rul/logs/FD004_GAT_EDmamba_JointRULLoss_CQR_95%/seed30/model_FD004_1108_091252_seed30.pkl
+model_path:/Mamba_Rul/logs/FD004_GAT_EDmamba_JointRULLoss_CQR_95%/seed30/model_FD004_1108_091252_seed30.pkl
+rmse_final:17.969619750976562, score:1362.996337890625
+interval_metrics: PICP=0.902174, PINAW=0.461348, CWC=5.502839, AIS=-7.924121
+test_results_written_to_log_only:True

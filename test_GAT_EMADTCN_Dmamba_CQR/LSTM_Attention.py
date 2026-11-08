@@ -121,6 +121,7 @@ class EncoderDecoder(nn.Module):
                  gat_num_layers=2,
                  gat_embed_dim=16,
                  gat_topk=5,
+                 graph_temperature=0.2,
                  dropout=0.1,
                  gat_alpha=0.1,
                  use_decoder=True):
@@ -145,6 +146,7 @@ class EncoderDecoder(nn.Module):
                 topk=gat_topk,
                 graph_mode=graph_mode,
                 dropout=dropout,
+                graph_temperature=graph_temperature,
                 alpha=gat_alpha,
             )
         else:

@@ -117,10 +117,13 @@ def train(model_for_train, train_loader, valid_loader, test_loader, N_EPOCH, opt
           loss_eval, lines_list, patience, max_rul, num_test_windows, device, time, log_path,
           checkpoint_dir=None, checkpoint_prefix=None, log_language='en',
           gaussian_warmup_start=10, gaussian_warmup_epochs=10,
-          cqr_warmup=False, cqr_warmup_start=10, cqr_warmup_epochs=10):
+          cqr_warmup=False, cqr_warmup_start=10, cqr_warmup_epochs=10,
+          grad_clip_norm=1.0):
     train_start_at = datetime.datetime.now()
     train_start_perf = time_module.perf_counter()
     train_batch_length = len(train_loader)
+    if grad_clip_norm is not None and grad_clip_norm <= 0:
+        raise ValueError("grad_clip_norm must be positive or None.")
     best_rmse_valid = float("inf")
     best_epoch = 0
     best_metrics = {}
@@ -163,10 +166,28 @@ def train(model_for_train, train_loader, valid_loader, test_loader, N_EPOCH, opt
             outputs = model_for_train(x_train)  # forward pass
             uncertainty_outputs = outputs[1]
             loss = loss_train(outputs[0], uncertainty_outputs, y_train)
+            if not torch.isfinite(loss):
+                raise FloatingPointError(
+                    f"Non-finite loss at epoch={epoch}, batch={batch}: {loss.item()}"
+                )
             epoch_loss += loss.item()
             optimizer.zero_grad()
             loss.backward()
+            if grad_clip_norm is not None:
+                grad_norm = torch.nn.utils.clip_grad_norm_(
+                    model_for_train.parameters(), grad_clip_norm
+                )
+                if not torch.isfinite(grad_norm):
+                    raise FloatingPointError(
+                        f"Non-finite gradient norm at epoch={epoch}, batch={batch}: "
+                        f"{grad_norm.item()}"
+                    )
             optimizer.step()
+            for parameter in model_for_train.parameters():
+                if not torch.isfinite(parameter).all():
+                    raise FloatingPointError(
+                        f"Non-finite parameter at epoch={epoch}, batch={batch}"
+                    )
 
         model_for_train.eval()
         rmse_valid, valid_score, attention_weight_valid = validating_function(model_for_train,
